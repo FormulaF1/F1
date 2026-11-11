@@ -1,7 +1,696 @@
 <!DOCTYPE html>
-<html>
-<head><title>My Website</title></head>
-<body>
-  <h1>สวัสดี GitHub Pages! เว็บไซต์ของฉันใช้งานได้แล้ว</h1>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏁 F1 PREDICTION LEAGUE 2026</title>
+
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0d0e12">
+  
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/CMPZT6St/App-Formula-1-(3).png">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/CMPZT6St/App-Formula-1-(3).png">
+  <link rel="manifest" href="manifest.json">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,400;0,700;0,900;1,700&family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="pt-0 pb-5">
+  <div id="f1ToastContainer"></div>
+
+  <!-- Floating Bottom Nav (F1 Official Style) -->
+  <div class="d-flex f1-nav-tabs">
+    <div class="f1-nav-item"><button class="f1-nav-link active" onclick="showTab('tab-lb', this)"><i class="fa-solid fa-trophy"></i><span>STANDINGS</span></button></div>
+    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-pred', this)"><i class="fa-solid fa-flag-checkered"></i><span>PREDICT</span></button></div>
+    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-center', this)"><i class="fa-solid fa-chart-line"></i><span>PRACTICE</span></button></div>
+    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-2025', this)"><i class="fa-solid fa-clock-rotate-left"></i><span>ARCHIVE</span></button></div>
+    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-community', this)"><i class="fa-solid fa-users-viewfinder"></i><span>COMMUNITY</span></button></div>
+  </div>
+
+  <div class="container px-0" style="max-width: 540px;">
+    
+    <!-- โครงสร้างใหม่: Top Bar & Bottom Dock (รวมอยู่ในรูปปกชิ้นเดียว ไร้รอยต่อ) -->
+    <!-- 1. รูปปก: เอาโลโก้ F1 PREDICTOR และปุ่มลงทะเบียนไว้ที่ขอบล่างของรูปเหมือนในภาพตัวอย่าง -->
+    <div class="hero-banner-hud">
+      <img src="https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj" alt="F1 Racing" class="hero-img-hud">
+      
+      <div class="hero-overlay-hud">
+        <div class="d-flex justify-content-between align-items-end w-100 px-3 pb-2">
+          
+          <div class="d-flex flex-column" onclick="registerSecretClick()" title="Secret Admin Gateway" style="cursor: pointer;">
+            <div class="d-flex align-items-center mb-1">
+              <div class="brand-title-hud f1-font"><span class="f1-badge-hud">F1</span> PREDICTOR</div>
+            </div>
+            <div class="d-flex align-items-center ps-1 mt-1">
+              <span class="live-dot"></span>
+              <span class="hud-subtitle">2026 OFFICIAL FANTASY LEAGUE</span>
+            </div>
+          </div>
+          
+          <button type="button" class="btn-sys-badge" onclick="openRegisterModal()">
+            <i class="fa-solid fa-user"></i><span>ลงทะเบียน</span>
+          </button>
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. แถบคะแนนผู้เล่น: อยู่ถัดลงมาจากรูปปกทันทีแบบไร้กรอบ กลืนเป็นพื้นเดียวกับหน้าจอ -->
+    <div class="user-score-banner" id="userScoreBanner">
+      <div>
+        <div class="small text-secondary" style="font-size:0.75rem;">
+          <i class="fa-solid fa-id-badge text-danger me-1"></i>ผู้เล่น: <strong class="text-white fs-6 ms-1" id="myPlayerName">--</strong> 
+          <a href="javascript:void(0)" onclick="openLoginGateModal()" class="text-info ms-2 text-decoration-none small">(สลับชื่อ)</a>
+        </div>
+        <div class="small text-secondary mt-1" style="font-size:0.75rem;">
+          อันดับปัจจุบัน: <strong class="text-info" id="myCurrentRank">-</strong>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="small text-secondary text-uppercase" style="font-size:0.65rem;">คะแนนสะสมทั้งฤดูกาล</div>
+        <div class="user-score-pts f1-font mt-1"><span id="myTotalScore">0</span> <span style="font-size: 0.8rem; color:#94a3b8; text-shadow:none;">PTS</span></div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         1. Leaderboard Tab
+         ========================================== -->
+    <div id="tab-lb" class="tab-pane-custom">
+      <div class="f1-card p-3 mb-3">
+        <!-- 1. หัวข้อ STANDINGS -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="section-header-f1 m-0"><i class="fa-solid fa-ranking-star me-2"></i>STANDINGS</h2>
+          <div>
+            <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="forceRefreshData()"><i class="fa-solid fa-rotate me-1"></i>รีเฟรช</button>
+          </div>
+        </div>
+
+        <!-- 2. ปุ่ม Toggle สลับหน้าตาราง -->
+        <div class="standings-toggle-wrapper mb-3">
+          <div class="standings-toggle">
+            <button class="toggle-btn active" id="btn-user-standings" onclick="switchStandings('user')">PREDICTOR LEAGUE</button>
+            <button class="toggle-btn" id="btn-driver-standings" onclick="switchStandings('driver')">F1 DRIVERS</button>
+            <button class="toggle-btn" id="btn-team-standings" onclick="switchStandings('team')">F1 TEAMS</button>
+          </div>
+        </div>
+
+        <!-- 3. คอนเทนต์ 1: ตารางคะแนนคนทายผล -->
+        <div id="user-standings-view">
+          <div id="podiumContainer" class="podium-container"></div>
+          <div id="lbListContainer" class="d-flex flex-column gap-2 mt-2">
+            <div class="skeleton-shimmer" style="height:65px; width:100%; border-radius:12px;"></div>
+            <div class="skeleton-shimmer" style="height:65px; width:100%; border-radius:12px;"></div>
+          </div>
+        </div>
+
+        <!-- 4. คอนเทนต์ 2: ตารางคะแนนนักแข่ง F1 Official (สร้างผ่าน JS) -->
+        <div id="driver-standings-view" class="d-none">
+          <div class="f1-official-standings">
+            <div class="f1-standings-header">
+              <div class="col-pos">Pos.</div>
+              <div class="col-driver">DRIVER</div>
+              <div class="col-pts">PTS.</div>
+            </div>
+            <div id="driverStandingsList"></div>
+          </div>
+        </div>
+
+        <!-- 5. คอนเทนต์ 3: ตารางคะแนนทีมผู้ผลิต (สร้างผ่าน JS) -->
+        <div id="team-standings-view" class="d-none">
+          <div id="teamStandingsList" class="f1-team-cards-container d-flex flex-column mt-2"></div>
+        </div>
+      </div>
+
+      <!-- ส่วนตรวจผลการแข่งขัน (แสดงเฉพาะหน้า PREDICTOR LEAGUE) -->
+      <div class="f1-card p-3" id="checkResultCard">
+        <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold m-0 text-secondary small text-uppercase"><i class="fa-solid fa-square-check text-success me-2"></i>ตรวจผลการแข่งขัน & คะแนนที่ได้</h6></div>
+        <div class="mb-2"><select id="selFinishedRace" class="form-select form-select-sm"><option value="" disabled selected>-- เลือกสนามที่สรุปผลแล้ว --</option></select></div>
+        <button type="button" class="btn btn-sm btn-outline-success w-100" onclick="handleCheckFinishedRace()"><i class="fa-solid fa-magnifying-glass me-1"></i>ตรวจสอบคะแนนสนามนี้</button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         2. Prediction Tab
+         ========================================== -->
+    <div id="tab-pred" class="tab-pane-custom" style="display: none;">
+      <div class="f1-card p-4">
+        <h2 class="section-header-f1 mb-2"><i class="fa-solid fa-gamepad me-2"></i>PREDICTION FORM</h2>
+        
+        <!-- ⚠️ คืนชีพกล่องกติกาเดิม แต่ใช้ d-none ซ่อนไว้ เพื่อป้องกัน JS Error -->
+        <div class="rule-alert-box mb-4 d-none">
+          <i class="fa-solid fa-circle-info text-warning me-1"></i> <strong>กติกา:</strong> ทายตำแหน่งเป๊ะ (P1-P4) ได้ <strong>2 คะแนน/ตำแหน่ง</strong>
+        </div>
+        
+        <!-- ⚠️ กล่องประวัติทายผล -->
+        <div id="savedPredAlert" class="history-card" style="display: none;">
+          <div class="d-flex justify-content-between align-items-center mb-2"><span class="small fw-bold text-success"><i class="fa-solid fa-circle-check me-1"></i>คุณได้ส่งคำทายสนามนี้ไว้แล้ว</span><span class="badge bg-success" style="font-size:0.65rem;">บันทึกแล้ว</span></div>
+          <div class="small text-secondary mb-2" id="savedPredTime" style="font-size:0.75rem;">เวลาส่ง: -</div>
+          <div class="history-content-box text-start small text-white" id="savedPredContent">-</div>
+          <div class="small text-muted mt-3" style="font-size:0.7rem;">💡 คุณสามารถแตะเปลี่ยนการ์ดนักแข่งด้านล่าง แล้วกด Submit เพื่ออัปเดตคำทายใหม่ได้จนกว่าจะหมดเวลา</div>
+        </div>
+
+        <form onsubmit="handlePrediction(event)">
+          
+          <!-- ⚠️ คืนชีพกล่องโปรไฟล์เดิม แต่ใช้ d-none ซ่อนไว้ทั้งหมด -->
+          <div class="player-display-box mb-4 d-flex justify-content-between align-items-center d-none">
+            <div><div class="small text-secondary" style="font-size: 0.75rem;">ส่งคำทายในชื่อ:</div><div class="fw-bold text-white fs-6"><i class="fa-solid fa-user-check text-success me-2"></i><span id="formPlayerDisplay">-</span></div></div>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-1" onclick="openLoginGateModal()">เปลี่ยนชื่อ</button>
+          </div>
+
+          <!-- โครงสร้าง Cinematic Layout ที่แก้ ID ตรงกับระบบหลังบ้านแล้ว -->
+          <div class="mb-4">
+            <!-- 1. รูปภาพสนามแข่งขัน (id="trackImageWrapper") -->
+            <div id="trackImageWrapper" class="track-banner-box" style="display: none;" onclick="previewTrackImageById('trackImagePreview')">
+              <img id="trackImagePreview" src="" class="track-banner-img" alt="Track Banner">
+              <div class="track-banner-fade"></div>
+            </div>
+
+            <!-- 2. นาฬิกานับถอยหลัง -->
+            <div id="countdownBox" class="countdown-box" style="display: none;">
+              <div id="countdownTimer" class="countdown-timer">00:00:00</div>
+            </div>
+
+            <!-- 3. ตัวเลือกสนามแข่งขัน (id="selRace") -->
+            <div class="px-2">
+              <label class="form-label text-secondary small mb-1 d-none">สนามแข่งขัน</label>
+              <select class="form-select race-select-cinematic" id="selRace" onchange="onRaceChange()" required>
+                <option value="" disabled selected>-- กำลังโหลดข้อมูล / เลือกสนาม --</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="d-none">
+            <select id="pos1" class="driver-opt"></select>
+            <select id="pos2" class="driver-opt"></select>
+            <select id="pos3" class="driver-opt"></select>
+            <select id="pos4" class="driver-opt"></select>
+            <select id="posFL" class="driver-opt"></select>
+          </div>
+
+          <label class="form-label mb-2"><i class="fa-solid fa-trophy text-warning me-1"></i> เลือกนักแข่งเข้าเส้นชัย (P1 - P4)</label>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="driver-slot-card p1-card" id="card-pos1" onclick="openDriverSelector('pos1')">
+                <div class="slot-badge-ui"><span class="pos-badge pos-1 m-0">1</span> P1</div>
+                <div class="slot-empty-state">
+                  <i class="fa-solid fa-crosshairs empty-icon"></i>
+                  <div class="telemetry-await">AWAITING INPUT<span class="blink-cursor">_</span></div>
+                </div>
+                <div class="slot-filled-state d-none">
+                  <div class="driver-name-ui" id="name-pos1">Name</div>
+                  <div class="driver-team-ui" id="team-pos1">Team</div>
+                  <img src="" class="team-logo-mini" id="watermark-pos1" alt="Team">
+                  <img src="" class="driver-img-ui" id="img-pos1" alt="Driver">
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="driver-slot-card p2-card" id="card-pos2" onclick="openDriverSelector('pos2')">
+                <div class="slot-badge-ui"><span class="pos-badge pos-2 m-0">2</span> P2</div>
+                <div class="slot-empty-state">
+                  <i class="fa-solid fa-crosshairs empty-icon"></i>
+                  <div class="telemetry-await">AWAITING INPUT<span class="blink-cursor">_</span></div>
+                </div>
+                <div class="slot-filled-state d-none">
+                  <div class="driver-name-ui" id="name-pos2">Name</div>
+                  <div class="driver-team-ui" id="team-pos2">Team</div>
+                  <img src="" class="team-logo-mini" id="watermark-pos2" alt="Team">
+                  <img src="" class="driver-img-ui" id="img-pos2" alt="Driver">
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="driver-slot-card p3-card" id="card-pos3" onclick="openDriverSelector('pos3')">
+                <div class="slot-badge-ui"><span class="pos-badge pos-3 m-0">3</span> P3</div>
+                <div class="slot-empty-state">
+                  <i class="fa-solid fa-crosshairs empty-icon"></i>
+                  <div class="telemetry-await">AWAITING INPUT<span class="blink-cursor">_</span></div>
+                </div>
+                <div class="slot-filled-state d-none">
+                  <div class="driver-name-ui" id="name-pos3">Name</div>
+                  <div class="driver-team-ui" id="team-pos3">Team</div>
+                  <img src="" class="team-logo-mini" id="watermark-pos3" alt="Team">
+                  <img src="" class="driver-img-ui" id="img-pos3" alt="Driver">
+                </div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="driver-slot-card p4-card" id="card-pos4" onclick="openDriverSelector('pos4')">
+                <div class="slot-badge-ui"><span class="pos-badge pos-4 m-0">4</span> P4</div>
+                <div class="slot-empty-state">
+                  <i class="fa-solid fa-crosshairs empty-icon"></i>
+                  <div class="telemetry-await">AWAITING INPUT<span class="blink-cursor">_</span></div>
+                </div>
+                <div class="slot-filled-state d-none">
+                  <div class="driver-name-ui" id="name-pos4">Name</div>
+                  <div class="driver-team-ui" id="team-pos4">Team</div>
+                  <img src="" class="team-logo-mini" id="watermark-pos4" alt="Team">
+                  <img src="" class="driver-img-ui" id="img-pos4" alt="Driver">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4" id="flWrapper">
+            <label class="form-label mb-2"><i class="fa-solid fa-bolt text-purple me-1"></i> FASTEST LAP (+1 คะแนน)</label>
+            <div class="driver-slot-card fl-card" id="card-posFL" onclick="openDriverSelector('posFL')">
+              <div class="slot-badge-ui"><span class="pos-badge pos-fl m-0"><i class="fa-solid fa-bolt"></i></span> FL</div>
+              <div class="slot-empty-state">
+                <i class="fa-solid fa-crosshairs empty-icon"></i>
+                <div class="telemetry-await">AWAITING INPUT<span class="blink-cursor">_</span></div>
+              </div>
+              <div class="slot-filled-state d-none">
+                <div class="driver-name-ui" id="name-posFL">Name</div>
+                <div class="driver-team-ui" id="team-posFL">Team</div>
+                <img src="" class="team-logo-mini" id="watermark-posFL" alt="Team">
+                <img src="" class="driver-img-ui" id="img-posFL" alt="Driver">
+              </div>
+            </div>
+          </div>
+          <button type="submit" id="btnPred" class="btn btn-race w-100 f1-font"><i class="fa-solid fa-paper-plane me-2"></i>SUBMIT PREDICTION</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         3. Race Center Tab
+         ========================================== -->
+    <div id="tab-center" class="tab-pane-custom" style="display: none;">
+      <div class="f1-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="section-header-f1 m-0"><i class="fa-solid fa-gauge-high me-2"></i>RACE TELEMETRY</h2>
+          <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="refreshRaceCenter()">
+            <i class="fa-solid fa-rotate me-1"></i>รีเฟรช
+          </button>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">เลือกสนามแข่งขัน</label>
+          <select id="selCenterRace" class="form-select" onchange="onCenterRaceChange()"><option value="" disabled selected>-- เลือกสนาม --</option></select>
+        </div>
+
+        <div id="rcContent" style="display: none;">
+          <div class="unified-telemetry-card mb-3">
+            <div id="rcTrackLayoutWrapper" class="utc-map-section" style="display: none;" onclick="previewTrackImageById('rcTrackLayoutImg')">
+              <div class="utc-map-header">
+                <span><i class="fa-solid fa-location-crosshairs text-danger me-1"></i> CIRCUIT LAYOUT</span>
+                <span class="badge bg-dark text-danger border border-danger px-2 py-1" style="font-size:0.62rem;"><i class="fa-solid fa-magnifying-glass-plus me-1"></i> ขยายแผนผัง</span>
+              </div>
+              <div class="utc-map-body">
+                <img id="rcTrackLayoutImg" src="" alt="Circuit Layout">
+              </div>
+            </div>
+
+            <div class="utc-specs-section">
+              <div class="utc-specs-title">
+                <i class="fa-solid fa-microchip text-danger me-1"></i> CIRCUIT TELEMETRY & SPECS
+              </div>
+
+              <div class="spec-list">
+                <div class="spec-row tint-red">
+                  <div class="spec-label">
+                    <i class="fa-solid fa-road text-danger spec-icon"></i>
+                    <span>ประเภทแทร็ก</span>
+                  </div>
+                  <div class="spec-val" id="rcTrackType">-</div>
+                </div>
+
+                <div class="spec-row">
+                  <div class="spec-label">
+                    <img src="https://lh3.googleusercontent.com/d/1Avb5T0J-FYVcDFDgFTrnC6egvJmo9-Nw" class="spec-tire-icon" alt="Tire">
+                    <span>ยาง PIRELLI</span>
+                  </div>
+                  <div class="spec-val" id="rcTires">-</div>
+                </div>
+
+                <div class="spec-row tint-blue">
+                  <div class="spec-label">
+                    <i class="fa-solid fa-triangle-exclamation text-info spec-icon"></i>
+                    <span>โอกาสเกิด Safety Car</span>
+                  </div>
+                  <div class="spec-val" id="rcSafetyCar">-</div>
+                </div>
+
+                <div class="spec-row">
+                  <div class="spec-label">
+                    <i class="fa-solid fa-cloud-sun text-success spec-icon"></i>
+                    <span>พยากรณ์อากาศ</span>
+                  </div>
+                  <div class="spec-val weather-icon-animated" id="rcWeather">-</div>
+                </div>
+
+                <div class="spec-row tint-gold">
+                  <div class="spec-label">
+                    <i class="fa-solid fa-trophy text-warning spec-icon"></i>
+                    <span>แชมป์ 3 ปีย้อนหลัง</span>
+                  </div>
+                  <div class="spec-val text-warning" id="rcPrevWinners">-</div>
+                </div>
+              </div>
+
+              <div class="utc-keynote-box">
+                <i class="fa-solid fa-lightbulb text-warning me-2"></i>
+                <span id="rcKeyNote">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3" id="rcExtLinkArea">
+            <a href="#" target="_blank" id="rcExtLinkBtn" class="btn-odds-menu">
+              <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-chart-line fs-5"></i>
+                <span class="fs-6">อัตราต่อรองการแข่งขัน</span>
+              </div>
+              <span class="badge bg-white text-success px-3 py-2 fw-bold" style="font-size:0.75rem;">เปิดดูราคา <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i></span>
+            </a>
+          </div>
+
+          <div id="practiceSectionWrapper" class="mb-4" style="display: none;">
+            <h2 class="section-header-f1">PRACTICE SESSIONS</h2>
+            <div class="practice-borderless-container" onclick="previewTrackImageById('thumbPractice')" style="cursor: pointer;">
+              <div class="d-flex justify-content-end mb-2">
+                <span class="badge bg-danger text-white px-2 py-1" style="font-size: 0.65rem; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                  <i class="fa-solid fa-magnifying-glass-plus me-1"></i> ขยายรูปภาพ
+                </span>
+              </div>
+              <img id="thumbPractice" src="" class="img-fluid w-100" style="border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);" alt="Practice Results">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         4. Race Archive Tab
+         ========================================== -->
+    <div id="tab-2025" class="tab-pane-custom" style="display: none;">
+      <div class="f1-card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2 class="section-header-f1 m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>RACE ARCHIVE</h2>
+          <span class="small text-secondary" style="font-size:0.75rem;">ผลฤดูกาลก่อนหน้า</span>
+        </div>
+        
+        <div class="mb-3">
+          <label class="form-label">เลือกสนามย้อนหลัง</label>
+          <select id="sel2025Race" class="form-select archive-race-select" onchange="on2025RaceChange()">
+            <option value="" disabled selected>-- เลือกสนาม --</option>
+          </select>
+        </div>
+
+        <div id="content2025" style="display: none;">
+          <div class="archive-segmented-control mb-3">
+            <button type="button" id="segBtnQuali" class="archive-seg-btn active-quali" onclick="switchArchiveMode('quali2025')">
+              <i class="fa-solid fa-stopwatch me-1"></i> QUALIFYING
+              <span class="seg-dot" id="dotQuali2025"></span>
+            </button>
+            <button type="button" id="segBtnRace" class="archive-seg-btn" onclick="switchArchiveMode('race2025')">
+              <i class="fa-solid fa-flag-checkered me-1"></i> MAIN RACE
+              <span class="seg-dot" id="dotRace2025"></span>
+            </button>
+          </div>
+
+          <div class="archive-scifi-header">
+            <span id="archiveHeaderTitle"><i class="fa-solid fa-bolt text-info me-2"></i>QUALIFYING CLASSIFICATION</span>
+            <div class="archive-scifi-line"></div>
+          </div>
+
+          <div id="archiveViewerBox" class="archive-cinematic-viewer" onclick="openActiveArchivePreview()">
+            <img id="archiveMainImg" src="" class="archive-fullbleed-img" alt="Archive Result" style="display: none;">
+            <div id="archiveFloatingBadge" class="archive-floating-zoom" style="display: none;">
+              <i class="fa-solid fa-magnifying-glass-plus text-danger me-1"></i> แตะเพื่อขยาย
+            </div>
+            <div id="archiveEmptyState" class="archive-empty-telemetry" style="display: none;">
+              <i class="fa-solid fa-satellite-dish mb-2"></i>
+              <div class="f1-font fw-bold text-white" style="letter-spacing: 1px;">NO TELEMETRY DATA ARCHIVED</div>
+              <div class="small text-secondary mt-1" style="font-size: 0.72rem;">ยังไม่มีภาพบันทึกผลการแข่งขันในโหมดนี้</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         5. Community Tab
+         ========================================== -->
+    <div id="tab-community" class="tab-pane-custom" style="display: none;">
+      <div class="f1-card p-3">
+        <h2 class="section-header-f1"><i class="fa-solid fa-users-viewfinder me-2"></i>RACE GRID & CONSENSUS</h2>
+        <div class="mb-3"><label class="form-label">เลือกสนามเพื่อดูโพยเพื่อน</label><select id="selCommRace" class="form-select" onchange="loadCommunityPredictions()"><option value="" disabled selected>-- เลือกสนาม --</option></select></div>
+        <div id="commContent"><div class="text-secondary text-center small py-4">แตะเลือกสนามเพื่อตรวจสอบคำทายและสถิติของกลุ่ม</div></div>
+      </div>
+    </div>
+
+    <div class="text-center mt-4 text-secondary small d-flex justify-content-between align-items-center px-2"><span>F1 Predictor © 2026</span><span class="secret-lock" onclick="openAdminModal()" title="Admin Access"><i class="fa-solid fa-lock"></i></span></div>
+    <div style="height: 40px;"></div>
+  </div>
+<!-- F1 Driver Hero Modal (สไตล์ Editorial Stack ไร้กรอบ) -->
+  <div class="modal fade" id="driverHeroModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+      <!-- ⚠️ ย้าย id="heroBgColor" มาไว้ที่กล่องนอกสุดตรงนี้ -->
+      <div class="modal-content border-0 hero-modal-content" id="heroBgColor">
+        <!-- Header (โลโก้ F1 & ปุ่มปิด) -->
+        <div class="modal-header border-0 position-absolute top-0 w-100 z-3 px-4 pt-4">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg" alt="F1" style="height: 20px;">
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="modal-body p-0 position-relative d-flex flex-column justify-content-end overflow-hidden">
+          <!-- ข้อมูลนักแข่ง (ชื่อ & ทีม) วางชิดซ้ายด้านบน -->
+          <div class="position-absolute top-0 start-0 w-100 px-4 z-2" style="margin-top: 80px;">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <img id="heroTeamLogo" src="" alt="Team" class="hero-team-icon">
+              <span class="text-white-50 small text-uppercase fw-bold" id="heroTeamName">Team</span>
+            </div>
+            <h1 class="hero-driver-title text-white m-0" id="heroDriverFirstName">FIRST</h1>
+            <h1 class="hero-driver-title text-white m-0 fw-bold" id="heroDriverLastName">LAST</h1>
+          </div>
+
+          <!-- รูปนักแข่ง & เอฟเฟกต์กระจกเบลอ -->
+          <div class="hero-driver-photo-container">
+            <img id="heroDriverImg" src="" class="hero-driver-cutout" alt="Driver">
+            <div class="hero-photo-blur"></div>
+          </div>
+
+          <!-- แผงสถิติด้านล่าง (Editorial Stack - ไร้กรอบ ชิดซ้าย) -->
+          <div class="hero-bottom-stats z-3 px-4 pb-5 position-absolute bottom-0 start-0 w-100">
+            <div class="d-flex flex-column gap-3">
+              
+              <!-- บรรทัดบน: POINTS (ตัวเลขสีทอง) -->
+              <div class="editorial-stat-block">
+                <div class="stat-label-mini">POINTS</div>
+                <div class="stat-value-massive text-gold">
+                  <span id="heroPoints">0</span><span class="stat-unit">PTS</span>
+                </div>
+              </div>
+
+              <!-- บรรทัดล่าง: CHAMPIONSHIP (ตัวเลขไล่สีโปร่งใส Fade-out) -->
+              <div class="editorial-stat-block">
+                <div class="stat-label-mini">CHAMPIONSHIP</div>
+                <div class="stat-value-massive text-gradient-fade" id="heroPos">P1</div>
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modals -->
+  <div class="modal fade" id="loginGateModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content f1-card border-danger text-white">
+        <div class="modal-header border-secondary">
+          <h6 class="modal-title f1-font text-white"><i class="fa-solid fa-id-card-clip text-danger me-2"></i>เลือกโปรไฟล์ผู้เล่นของคุณ</h6>
+        </div>
+        <div class="modal-body">
+          <p class="text-secondary small mb-3">กรุณาแตะเลือกชื่อเล่น และกรอก PIN ของคุณเพื่อเข้าสู่ระบบ</p>
+          <div class="mb-3">
+            <select id="loginPlayerSelect" class="form-select fs-6 py-2 mb-2"><option value="" disabled selected>-- แตะเลือกชื่อของคุณ --</option></select>
+            <input type="password" id="loginPin" class="form-control text-center fs-5" pattern="[0-9]{4}" inputmode="numeric" maxlength="4" placeholder="รหัส PIN 4 หลัก" required>
+          </div>
+          <button type="button" class="btn btn-race w-100 f1-font mb-3" onclick="confirmLoginGate()"><i class="fa-solid fa-right-to-bracket me-2"></i>เข้าสู่ระบบ</button>
+          <div class="text-center"><span class="text-secondary small">ยังไม่มีชื่อในระบบ? </span><a href="javascript:void(0)" onclick="switchToRegisterFromLogin()" class="text-danger small fw-bold text-decoration-none">+ ลงทะเบียนใหม่</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="regModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content f1-card border-secondary text-white">
+        <div class="modal-header border-secondary">
+          <h6 class="modal-title f1-font text-white"><i class="fa-solid fa-id-card text-danger me-2"></i>REGISTRATION</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form onsubmit="handleRegister(event)">
+            <div class="mb-3">
+              <label class="form-label">ชื่อเล่นของคุณ</label>
+              <input type="text" id="regName" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">ทีม F1 ที่ชื่นชอบ</label>
+              <select id="regTeam" class="form-select" required>
+                <option value="" disabled selected>-- เลือกทีมโปรด --</option>
+                <option value="Ferrari">🔴 Ferrari</option>
+                <option value="Red Bull Racing">🔵 Red Bull Racing</option>
+                <option value="McLaren">🟠 McLaren</option>
+                <option value="Mercedes">🟢 Mercedes</option>
+                <option value="Aston Martin">🌿 Aston Martin</option>
+                <option value="Alpine">🩵 Alpine</option>
+                <option value="Williams">🔷 Williams</option>
+                <option value="VCARB">⚪ VCARB</option>
+                <option value="Audi">💚 Audi</option>
+                <option value="Haas">⚫ Haas</option>
+                <option value="Cadillac">⬜ Cadillac</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">ตั้งรหัส PIN 4 หลัก (เพื่อใช้ล็อกอิน)</label>
+              <input type="password" id="regPin" class="form-control text-center fs-5 text-warning" pattern="[0-9]{4}" inputmode="numeric" maxlength="4" placeholder="XXXX" required>
+            </div>
+            <button type="submit" id="btnReg" class="btn btn-race w-100 f1-font"><i class="fa-solid fa-check me-2"></i>CONFIRM</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="breakdownModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content f1-card border-success text-white"><div class="modal-header border-secondary"><h6 class="modal-title f1-font text-success"><i class="fa-solid fa-square-poll-vertical me-2"></i>RACE RESULT & SCORE BREAKDOWN</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="breakdownBody">กำลังคำนวณผลการตรวจคะแนน...</div></div></div></div>
+  <div class="modal fade" id="statsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content f1-card border-secondary text-white"><div class="modal-header border-secondary"><h6 class="modal-title f1-font text-warning"><i class="fa-solid fa-chart-simple me-2"></i>PLAYER CAREER STATS</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-center" id="statsBody">กำลังประมวลผลสถิติ...</div></div></div></div>
+  
+  <div class="modal fade" id="adminModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content f1-card border-danger text-white">
+        <div class="modal-header border-secondary">
+          <h6 class="modal-title f1-font text-danger"><i class="fa-solid fa-shield-halved me-2"></i>ADMIN PANEL</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3"><input type="password" id="adminPin" class="form-control text-center fs-5" placeholder="Admin PIN" required></div>
+          
+          <div class="p-2 border border-primary rounded mb-3 bg-black">
+            <span class="small text-primary fw-bold"><i class="fa-solid fa-link me-1"></i>อัปเดตลิงก์รูปภาพ & อัตราต่อรอง</span>
+            <div class="mt-2 mb-2"><select id="adMediaRace" class="form-select form-select-sm" onchange="onAdminMediaRaceChange()"></select></div>
+            <input type="url" id="adTrackImgUrl" class="form-control form-control-sm mb-2" placeholder="URL รูปปกสนาม / โปสเตอร์ (โชว์หน้าทายผล)">
+            <input type="url" id="adPracticeUrl" class="form-control form-control-sm mb-2" placeholder="URL รูปผลซ้อมรวม">
+            <div class="row g-2 mb-2">
+              <div class="col-6"><input type="url" id="adQuali2025Url" class="form-control form-control-sm" placeholder="URL Quali ปีก่อน"></div>
+              <div class="col-6"><input type="url" id="adRace2025Url" class="form-control form-control-sm" placeholder="URL Race ปีก่อน"></div>
+            </div>
+            <input type="url" id="adExtLink" class="form-control form-control-sm mb-2" placeholder="URL อัตราต่อรอง">
+            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="handleAdminSaveMediaLinks()">บันทึกลิงก์ทั้งหมด</button>
+          </div>
+          
+          <div class="p-2 border border-info rounded mb-3 bg-black">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small text-info fw-bold">เช็กคนส่งคำทาย</span>
+              <button type="button" class="btn btn-sm btn-outline-info py-0 px-2" onclick="checkAdminSubmissions()">เช็กสถานะ</button>
+            </div>
+            <select id="adRaceCheck" class="form-select form-select-sm mb-2"></select>
+            <div id="subStatusContainer" style="display: none;">
+              <div class="d-flex justify-content-between small text-secondary mb-2" id="subStatusSummary"></div>
+              <div class="mb-2 p-2 rounded bg-dark border border-danger">
+                <div class="d-flex justify-content-between align-items-center mb-1"><span class="small text-danger fw-bold">ยังไม่ส่ง (<span id="cntPending">0</span>):</span><button type="button" class="btn btn-xs btn-outline-warning py-0 px-1" onclick="copyPendingList()">ก๊อปปี้ไปทวง</button></div>
+                <div id="listPending" class="small text-white">-</div>
+              </div>
+              <div class="p-2 rounded bg-dark border border-success">
+                <div class="small text-success fw-bold mb-1">ส่งเรียบร้อยแล้ว (<span id="cntSubmitted">0</span>):</div>
+                <div id="listSubmitted" class="small text-secondary" style="max-height: 90px; overflow-y: auto;">-</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="p-2 border border-warning rounded mb-3 bg-black">
+            <div class="d-flex justify-content-between align-items-center mb-2"><span class="small text-warning fw-bold">จัดการปฏิทินแข่งขัน</span></div>
+            <div class="row g-2 mb-3">
+              <div class="col-8"><input type="number" id="adSeasonYear" class="form-control form-control-sm" value="2027"></div>
+              <div class="col-4"><button type="button" class="btn btn-sm btn-warning w-100 fw-bold" onclick="handleAdminSetupNewSeason()">ดึงตาราง</button></div>
+            </div>
+            <hr class="border-secondary mt-1 mb-2">
+            <select id="adRaceDead" class="form-select form-select-sm mb-2"></select>
+            <div class="row g-2 mb-2">
+              <div class="col-7"><input type="datetime-local" id="adNewDead" class="form-control form-control-sm"></div>
+              <div class="col-5"><select id="adNewStatus" class="form-select form-select-sm"><option value="OPEN">OPEN (เปิด)</option><option value="CLOSED">CLOSED (ปิด)</option></select></div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-warning w-100" onclick="handleAdminDeadline()">บันทึกอัปเดตสนาม</button>
+          </div>
+          
+          <form onsubmit="handleAdminSubmit(event)">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label text-danger fw-bold m-0">บันทึกผลแข่ง & ตัดคะแนน</label>
+              <button type="button" id="btnApiFetch" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="handleFetchOfficialResults()">ดึงผลจริง API</button>
+            </div>
+            <select id="adminRace" class="form-select mb-3" required onchange="onAdminRaceChange()"></select>
+            <div class="row g-2 mb-3">
+              <div class="col-6"><label class="form-label"><span class="pos-badge pos-1">1</span> P1</label><select id="adP1" class="form-select driver-opt" required></select></div>
+              <div class="col-6"><label class="form-label"><span class="pos-badge pos-2">2</span> P2</label><select id="adP2" class="form-select driver-opt" required></select></div>
+              <div class="col-6"><label class="form-label"><span class="pos-badge pos-3">3</span> P3</label><select id="adP3" class="form-select driver-opt" required></select></div>
+              <div class="col-6"><label class="form-label"><span class="pos-badge pos-4">4</span> P4</label><select id="adP4" class="form-select driver-opt" required></select></div>
+            </div>
+            <div class="mb-3" id="adminFlWrapper"><label class="form-label"><span class="pos-badge pos-fl"><i class="fa-solid fa-bolt"></i></span> Fastest Lap</label><select id="adFL" class="form-select driver-opt"></select></div>
+            <input type="url" id="adLink" class="form-control mb-3" placeholder="Official URL">
+            <button type="submit" id="btnAdmin" class="btn btn-race w-100 f1-font">บันทึกผล & สำรองข้อมูล & ตัดคะแนน</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content bg-transparent border-0">
+        <div class="modal-header border-0 pb-0 justify-content-end"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter: drop-shadow(0 0 5px rgba(0,0,0,0.8));"></button></div>
+        <div class="modal-body text-center pt-0"><img id="previewImageSrc" src="" class="img-fluid rounded shadow-lg" alt="Preview" style="max-height: 80vh; object-fit: contain;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade bottom-sheet-modal" id="driverSelectorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-bottom">
+      <div class="modal-content f1-card border-secondary text-white">
+        <div class="modal-header border-secondary pb-2 pt-3">
+          <h6 class="modal-title f1-font text-white" id="driverSelectorTitle"><i class="fa-solid fa-helmet-safety text-danger me-2"></i>เลือกนักแข่ง</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-2" style="max-height: 70vh; overflow-y: auto;">
+          <div class="driver-list-grid" id="driverGridContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalLoader" class="skeleton-wrapper hidden">
+    <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
+    <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
+    <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
+    <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
+    <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
+  </div>
+
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- เพิ่ม Chart.js สำหรับกราฟ Telemetry -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- เรียงลำดับการโหลดไฟล์ JavaScript ของเรา (มีแค่ชุดเดียว) -->
+  <script src="data-config.js"></script>
+  <script src="api-service.js"></script>
+  <script src="app-ui.js"></script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
 </body>
 </html>
