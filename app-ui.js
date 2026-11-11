@@ -2265,7 +2265,7 @@ function formatTelemetryText(text) {
   return text.replace(/\b(P[1-5]|Fastest Lap|Undercut|Safety Car)\b/gi, '<span class="telemetry-cyan">$&</span>');
 }
 
-// ส่งข้อความไปหา AI
+// ระบบบันทึกประวัติการแชท
 let radioChatHistory = [];
 
 function escapeHtml(str) {
@@ -2277,15 +2277,18 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
+// ส่งข้อความไปหา AI
 function sendRadioMessage() {
   const inputEl = document.getElementById('chatInput');
   const message = inputEl.value.trim();
-  if (!message) return;
+  
+  // บรรทัดนี้แหละครับที่มักจะทำให้เกิด Error ถอยหลุดออกจากฟังก์ชัน
+  if (!message) return; 
 
   const chatBox = document.getElementById('chatBox');
   const safeUserMsg = escapeHtml(message);
 
-  // 1. เพิ่มข้อความของผู้เล่น (User) ฝั่งขวาแบบปลอดภัยด้วย insertAdjacentHTML
+  // 1. เพิ่มข้อความของผู้เล่น (User) ฝั่งขวา
   chatBox.insertAdjacentHTML('beforeend', `
     <div class="msg-wrapper user">
       <div class="msg-bubble">${safeUserMsg}</div>
@@ -2320,10 +2323,10 @@ function sendRadioMessage() {
     playerName: player,
     raceName: currentRace,
     message: message,
-    chatHistory: radioChatHistory.slice(-4) // ส่งประวัติบทสนทนา 4 ข้อความล่าสุดไปด้วย
+    chatHistory: radioChatHistory.slice(-4) 
   };
 
-  // 4. เรียกใช้ฟังก์ชัน callGAS
+  // 4. เรียกใช้ฟังก์ชัน callGAS สำหรับ GitHub Pages
   callGAS("askRaceEngineer", clientData)
     .then(function(response) {
       const waveEl = document.getElementById(waveId);
@@ -2354,6 +2357,7 @@ function sendRadioMessage() {
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
+
 // ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
 function closeTeamRadio() {
   const modal = document.getElementById('pitWallModal');
