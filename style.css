@@ -1,0 +1,3343 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&display=swap');
+:root { 
+  --f1-red: #e10600; 
+  --f1-dark-red: #9e0400; 
+  --f1-black: #0d0e12; 
+  --f1-surface-light: #20222b; 
+  --f1-border: rgba(255, 255, 255, 0.12); 
+  --gold: #f59e0b; 
+  --silver: #94a3b8; 
+  --bronze: #d97706; 
+}
+
+body { 
+  background-color: #0d0e12 !important; /* ⬅️ ใช้สีดำสนิทเป็นพื้นหลังหลัก เพื่อให้เชื่อมกับเงารูปปก 100% */
+  background-image: none !important; /* ⬅️ เอาภาพพื้นหลังสีแดงที่ทำให้เกิดรอยตัดออก */
+  color: #f1f5f9; 
+  font-family: 'Kanit', sans-serif; 
+  min-height: 100vh; 
+  padding-bottom: 140px !important; 
+}
+
+.f1-font { 
+  font-family: 'Titillium Web', sans-serif; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+}
+
+.hero-banner { 
+  position: relative; 
+  width: 100%; 
+  aspect-ratio: 9 / 4; 
+  border-radius: 16px; 
+  overflow: hidden; 
+  margin-bottom: 12px; 
+  border: 1px solid var(--f1-border); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6); 
+}
+
+.hero-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  object-position: center; 
+  filter: brightness(0.7) contrast(1.1); 
+}
+
+.hero-overlay { 
+  position: absolute; 
+  inset: 0; 
+  background: linear-gradient(180deg, transparent 20%, rgba(13,14,18,0.95) 100%); 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: flex-end; 
+  padding: 14px; 
+}
+
+.brand-title { 
+  font-size: 1.7rem; 
+  font-weight: 900; 
+  font-style: italic; 
+  color: #fff; 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 8px; 
+  cursor: pointer; 
+  user-select: none; 
+}
+
+.brand-badge { 
+  background: var(--f1-red); 
+  padding: 2px 8px; 
+  border-radius: 4px; 
+  font-size: 0.8rem; 
+  font-weight: 800; 
+}
+/* 1. โครงสร้างรูปปก (ไร้กรอบ ไร้รอยต่อ) */
+.hero-banner-hud {
+  position: relative;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+  background-color: #0d0e12;
+}
+
+.hero-img-hud {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 2. เงาไล่ระดับด้านล่างรูปปก: เฟดเป็นสีดำสนิท #0d0e12 ที่ขอบล่างสุด ताकिกลืนกับพื้นที่ด้านล่าง 100% */
+.hero-overlay-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%; /* กินพื้นที่แค่ครึ่งล่าง ไม่ขึ้นไปกวนหน้านักแข่ง */
+  background: linear-gradient(to top, #0d0e12 0%, rgba(13, 14, 18, 0.85) 45%, transparent 100%);
+  display: flex;
+  align-items: flex-end;
+}
+
+/* 3. แถบคะแนนผู้เล่นด้านล่างรูปปก (ไร้กรอบ แต่สาดแสง Glow สีทีมจางๆ บนพื้นหลังดำ) */
+.user-score-banner { 
+  /* สาดแสงสีทีมจางๆ จากด้านบนลงมาหาสีดำสนิท #0d0e12 */
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--theme-color, #e10600) 15%, transparent) 0%, #0d0e12 75%) !important;
+  border: none !important; /* ไม่มีเส้นขอบตัดขวาง */
+  border-radius: 0 !important;
+  padding: 14px 20px 18px 20px !important;
+  margin-top: 0 !important;
+  margin-bottom: 8px !important;
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  box-shadow: none !important;
+  position: relative;
+  z-index: 2;
+}
+/* ⬅️ ถอดพื้นหลังและเส้นขอบของการ์ดหน้าหลักออกทั้งหมด ให้เชื่อมกับรูปปกแบบไร้รอยต่อ */
+.f1-card { 
+  background: transparent !important; 
+  backdrop-filter: none !important; 
+  -webkit-backdrop-filter: none !important; 
+  border: none !important; 
+  border-radius: 0 !important; 
+  box-shadow: none !important; 
+}
+
+/* ⬅️ คืนพื้นหลังกระจกฝ้าให้เฉพาะหน้าต่างป็อปอัป (Modal) เวลาเด้งขึ้นมาจะได้ไม่ใสทะลุ */
+.modal-content.f1-card {
+  background: linear-gradient(145deg, rgba(22, 24, 32, 0.96) 0%, rgba(10, 12, 16, 0.98) 100%) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9) !important;
+}
+
+.tab-pane-custom { 
+  animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+}
+
+@keyframes fadeSlideUp { 
+  from { opacity: 0; transform: translateY(20px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+.user-score-pts { 
+  font-size: 1.65rem; 
+  font-weight: 900; 
+  color: var(--theme-color, #ffb703); /* ⬅️ ดึงสีทีมโปรดมาใช้ ถ้าไม่มีจะเป็นสีทอง */
+  line-height: 1; 
+  /* ⬅️ ใส่เอฟเฟกต์ไฟนีออนส่องสว่างที่ตัวเลขคะแนน */
+  text-shadow: 0 0 15px var(--theme-color, rgba(255, 183, 3, 0.6));
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* ⬅️ เพิ่มคลาสนี้เข้าไปใหม่ เพื่อทำให้อันดับปัจจุบันเรืองแสงด้วย */
+#myCurrentRank {
+  color: var(--theme-color, #0dcaf0) !important;
+  text-shadow: 0 0 12px var(--theme-color, rgba(13, 202, 240, 0.5));
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+/* --- โพเดียมโฉมใหม่ (Premium Trading Card Design) --- */
+.premium-podium-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 15px 0 25px 0;
+}
+
+.premium-card {
+  position: relative;
+  background: linear-gradient(to bottom, #161822 0%, #0a0c10 100%);
+  border-radius: 16px;
+  border: none;
+  overflow: hidden;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6), inset 0 2px 0 var(--border-color), inset 0 20px 30px -15px rgba(255,255,255,0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 2px 0 var(--border-color);
+}
+
+/* แสงพื้นหลัง สาดจากตรงกลางขึ้นมา */
+.premium-card .bg-glow {
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 100%;
+  background: radial-gradient(circle at bottom center, var(--team-color) 0%, transparent 65%);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+/* ลายน้ำโลโก้ทีม (อยู่กึ่งกลางการ์ด) */
+.premium-card .watermark-logo {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  height: 120%;
+  opacity: 0.03;
+  filter: grayscale(100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ส่วนหัว: อันดับ และ คะแนน */
+.premium-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+}
+.rank-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #ffdf00, #d4af37);
+  color: #000;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 1.2rem;
+}
+.rank-badge.rank-2 { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #000; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; }
+.rank-badge.rank-3 { background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff; width: 34px; height: 34px; border-radius: 50%; font-size: 1.1rem; }
+
+.pts-display {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: 900;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+  text-align: right;
+  line-height: 1;
+}
+.king .pts-display { font-size: 1.8rem; color: #ffb703; }
+.prince .pts-display { font-size: 1.5rem; color: #fff; }
+.pts-label { font-size: 0.75rem; color: #cbd5e1; margin-left: 2px; }
+
+/* ตรงกลาง: โชว์รูปรถ */
+.car-showcase {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.king .car-showcase { height: 85px; margin: 12px 0; }
+.prince .car-showcase { height: 60px; margin: 10px 0; }
+
+.car-showcase img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(0,0,0,0.6));
+}
+
+/* ปรับขนาดรถของอันดับ 2 และ 3 ให้มีระยะห่างจากขอบการ์ดเล็กน้อย */
+.prince .car-showcase img {
+  max-width: 92%;
+}
+/* ส่วนท้าย: ชื่อ และ โลโก้ทีม */
+.card-footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.player-name {
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  margin-bottom: 6px;
+}
+.king .player-name { font-size: 1.4rem; }
+.prince .player-name { font-size: 1.1rem; }
+
+.team-logo-small {
+  height: 20px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+.princes-row {
+  display: flex;
+  gap: 12px;
+}
+
+.table-responsive { background: transparent !important; }
+
+.leader-table { 
+  background-color: transparent !important; 
+  color: #f1f5f9 !important; 
+  margin: 0; 
+}
+
+.leader-table th { 
+  background: rgba(255,255,255,0.03) !important; 
+  border-bottom: 2px solid var(--f1-border) !important; 
+  color: #94a3b8 !important; 
+  font-size: 0.75rem; 
+  padding: 10px 6px; 
+}
+
+.leader-table td { 
+  background: transparent !important; 
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important; 
+  color: #f1f5f9 !important; 
+  padding: 12px 6px; 
+}
+
+.player-row { cursor: pointer; transition: background 0.2s; } 
+.player-row:hover { background: rgba(255,255,255,0.05) !important; }
+
+.rank-circle { 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  width: 26px; 
+  height: 26px; 
+  border-radius: 50%; 
+  font-weight: 800; 
+  font-size: 0.8rem; 
+}
+
+.rank-other { background: #282a36; color: #94a3b8; }
+
+.last-pts-badge { 
+  font-size: 0.8rem; 
+  padding: 3px 6px; 
+  border-radius: 6px; 
+  font-weight: 700; 
+}
+
+.pts-gain { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); } 
+.pts-zero { background: rgba(148, 163, 184, 0.1); color: #64748b; }
+
+.form-label { 
+  font-size: 0.8rem; 
+  font-weight: 600; 
+  color: #94a3b8; 
+  text-transform: uppercase; 
+}
+
+.form-select, .form-control { 
+  background-color: var(--f1-surface-light); 
+  border: 1px solid var(--f1-border); 
+  color: #fff; 
+  border-radius: 10px; 
+  padding: 10px 12px; 
+  font-size: 0.9rem; 
+}
+
+.form-select:focus, .form-control:focus { 
+  background-color: var(--f1-surface-light); 
+  color: #fff; 
+  border-color: var(--f1-red); 
+  box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.25); 
+}
+
+.form-select option { background-color: #1a1c24; color: #fff; }
+
+.countdown-box { 
+  background: linear-gradient(to bottom, rgba(16, 18, 26, 0.8) 0%, rgba(6, 7, 10, 0.95) 100%) !important; 
+  border: none !important; /* ถอดขอบรอบด้าน 2px ทิ้ง */
+  border-radius: 12px !important; 
+  padding: 24px 16px 16px 16px !important; /* ขยายพื้นที่ว่าง */
+  /* ใช้แสงเงาวาดเส้นสีแดง 3px ที่ขอบบนสุดแทนการใช้ border-top พร้อมเงาตกกระทบดูลอยขึ้น */
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7), inset 0 3px 0 var(--f1-red), inset 0 15px 30px -10px rgba(225, 6, 0, 0.15) !important; 
+  position: relative; 
+  overflow: hidden; 
+  margin-top: 16px; 
+  margin-bottom: 24px;
+  text-align: center; 
+}
+
+/* ปรับตำแหน่งข้อความ PIT WALL ให้อยู่ถูกที่หลังจากขยาย padding */
+.countdown-box::before { top: 8px; left: 16px; }
+.countdown-box::after { top: 10px; right: 16px; }
+
+/* อัปเดตสเตตัสสีไฟของกล่องนับเวลาถอยหลัง (ใช้ inset 0 3px 0 แทน border-top-color) */
+.countdown-box.status-warning {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.7), inset 0 3px 0 #f59e0b, inset 0 15px 30px -10px rgba(245, 158, 11, 0.15) !important;
+}
+.countdown-box.status-critical {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 3px 0 #ff3838, inset 0 15px 30px -10px rgba(255, 56, 56, 0.25), inset 0 0 30px rgba(225, 6, 0, 0.3) !important;
+}
+
+.countdown-box::before { 
+  content: 'PIT WALL STATUS'; 
+  position: absolute; 
+  top: 4px; 
+  left: 10px; 
+  font-size: 0.55rem; 
+  color: #4ade80; 
+  font-family: 'Share Tech Mono', monospace; 
+  letter-spacing: 1px; 
+}
+
+.countdown-box::after { 
+  content: ''; 
+  position: absolute; 
+  top: 6px; 
+  right: 10px; 
+  width: 8px; 
+  height: 8px; 
+  border-radius: 50%; 
+  background: #4ade80; 
+  box-shadow: 0 0 8px #4ade80; 
+  animation: blink 1s infinite; 
+}
+
+@keyframes blink { 
+  0%, 100% { opacity: 1; } 
+  50% { opacity: 0.3; } 
+}
+
+.timer-units { 
+  display: flex; 
+  justify-content: center; 
+  gap: 15px; 
+  margin-top: 8px; 
+}
+
+.timer-num { 
+  font-family: 'Share Tech Mono', monospace !important; 
+  font-size: 1.8rem !important; 
+  color: #ff3838 !important; 
+  text-shadow: 0 0 12px rgba(255, 56, 56, 0.7) !important; 
+  line-height: 1; 
+}
+
+.timer-lbl { 
+  font-size: 0.65rem; 
+  color: #94a3b8; 
+  text-transform: uppercase; 
+  margin-top: 2px; 
+}
+
+.pos-badge { 
+  width: 20px; 
+  height: 20px; 
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
+  border-radius: 50%; 
+  font-size: 0.7rem; 
+  font-weight: 800; 
+  margin-right: 4px; 
+}
+
+.pos-1 { background: var(--gold); color: #000; } 
+.pos-2 { background: var(--silver); color: #000; } 
+.pos-3 { background: var(--bronze); color: #fff; } 
+.pos-4 { background: #475569; color: #fff; } 
+.pos-fl { background: #a855f7; color: #fff; }
+
+.btn-race { 
+  background: linear-gradient(135deg, var(--f1-red), var(--f1-dark-red)); 
+  border: none; 
+  color: #fff; 
+  font-weight: 700; 
+  padding: 12px; 
+  border-radius: 10px; 
+  box-shadow: 0 4px 15px rgba(225, 6, 0, 0.35); 
+}
+
+.btn-race:hover { background: linear-gradient(135deg, #ff1a14, var(--f1-red)); color: #fff; } 
+.btn-race:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.consensus-stat-card { 
+  background: rgba(0, 0, 0, 0.4); 
+  border: 1px solid var(--f1-border); 
+  border-radius: 10px; 
+  padding: 10px; 
+  margin-bottom: 12px; 
+}
+
+.history-card { 
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(10, 12, 16, 0.8) 100%); 
+  border: none; /* ถอดขอบทิ้ง */
+  border-radius: 12px; 
+  padding: 18px 16px; /* ขยายช่องไฟ */
+  margin-bottom: 24px; 
+  /* สันกระจกแสงสีเขียวบนสุด */
+  box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(16, 185, 129, 0.25);
+}
+
+.rc-section-title { 
+  font-size: 0.75rem; 
+  font-weight: 800; 
+  color: #94a3b8; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
+  margin-bottom: 8px; 
+  display: flex; 
+  align-items: center; 
+  gap: 6px; 
+}
+
+.rc-card-btn { 
+  background: #181a24; 
+  border: 1px solid var(--f1-border); 
+  border-radius: 10px; 
+  padding: 12px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  color: #fff; 
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+  text-decoration: none; 
+  margin-bottom: 8px; 
+}
+
+.rc-card-btn:hover { background: #222533; border-color: var(--f1-red); color: #fff; transform: translateY(-1px); }
+.rc-btn-badge { font-size: 0.7rem; padding: 3px 8px; border-radius: 6px; font-weight: 700; }
+
+.btn-odds-menu { 
+  background: linear-gradient(135deg, #10b981, #059669); 
+  border: 1px solid rgba(16, 185, 129, 0.4); 
+  color: #fff; 
+  font-weight: 700; 
+  padding: 14px 16px; 
+  border-radius: 12px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  text-decoration: none; 
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); 
+  transition: all 0.2s ease; 
+  margin-bottom: 12px; 
+}
+
+.btn-odds-menu:hover { 
+  background: linear-gradient(135deg, #34d399, #10b981); 
+  color: #fff; 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); 
+}
+
+.team-logo-icon { 
+  width: 22px; 
+  height: 22px; 
+  object-fit: contain; 
+  vertical-align: middle; 
+  margin-left: 6px; 
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.35)); 
+  transition: filter 0.3s ease; 
+}
+
+.team-logo-icon:hover { filter: drop-shadow(0 0 8px var(--f1-red)); }
+
+@keyframes weatherFloat { 
+  0% { transform: translateY(0px); } 
+  50% { transform: translateY(-3px); } 
+  100% { transform: translateY(0px); } 
+}
+
+.weather-icon-animated { 
+  display: inline-block; 
+  animation: weatherFloat 2.5s infinite ease-in-out; 
+}
+
+#f1ToastContainer { 
+  position: fixed; 
+  top: 20px; 
+  right: 20px; 
+  z-index: 9999; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  max-width: 320px; 
+  width: 100%; 
+  pointer-events: none; 
+}
+
+.f1-toast { 
+  background: rgba(18, 20, 28, 0.95); 
+  backdrop-filter: blur(12px); 
+  border-left: 4px solid var(--f1-red); 
+  border-top: 1px solid var(--f1-border); 
+  border-right: 1px solid var(--f1-border); 
+  border-bottom: 1px solid var(--f1-border); 
+  color: #fff; 
+  padding: 12px 16px; 
+  border-radius: 10px; 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6); 
+  font-size: 0.85rem; 
+  pointer-events: auto; 
+  animation: toastSlideIn 0.3s ease, toastFadeOut 0.3s ease 4.7s forwards; 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+.f1-toast.success { border-left-color: #10b981; } 
+.f1-toast.error { border-left-color: #e10600; }
+
+@keyframes toastSlideIn { 
+  from { transform: translateX(100%); opacity: 0; } 
+  to { transform: translateX(0); opacity: 1; } 
+}
+
+@keyframes toastFadeOut { 
+  from { opacity: 1; } 
+  to { opacity: 0; transform: translateY(-10px); } 
+}
+
+@keyframes shimmer { 
+  0% { background-position: -200% 0; } 
+  100% { background-position: 200% 0; } 
+}
+
+.skeleton-shimmer { 
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.04) 75%); 
+  background-size: 200% 100%; 
+  animation: shimmer 1.5s infinite; 
+  border-radius: 6px; 
+  height: 18px; 
+}
+
+.secret-lock { opacity: 0.2; cursor: pointer; transition: opacity 0.2s; } 
+.secret-lock:hover { opacity: 0.7; }
+
+#globalLoader { 
+  position: fixed; 
+  inset: 0; 
+  z-index: 99999; 
+  background: var(--f1-black); 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+#globalLoader.hidden { opacity: 0; visibility: hidden; }
+
+.loader-spinner { 
+  width: 50px; 
+  height: 50px; 
+  border: 4px solid rgba(225, 6, 0, 0.2); 
+  border-top-color: var(--f1-red); 
+  border-radius: 50%; 
+  animation: f1Spin 1s linear infinite; 
+  margin-bottom: 20px; 
+}
+
+@keyframes f1Spin { 
+  0% { transform: rotate(0deg); } 
+  100% { transform: rotate(360deg); } 
+}
+
+/* --- ปรับสีข้อความแนะนำในช่องกรอก (Placeholder) ให้เป็นสีขาวสว่าง --- */
+.form-control::placeholder { color: rgba(255, 255, 255, 0.75) !important; }
+.form-control::-webkit-input-placeholder { color: rgba(255, 255, 255, 0.75) !important; }
+.form-control::-moz-placeholder { color: rgba(255, 255, 255, 0.75) !important; opacity: 1; }
+
+/* --- สไตล์กรอบแสดงรูปสนามในหน้าทายผล --- */
+.track-banner-box {
+  width: calc(100% + 2rem); /* ขยายให้ชิดขอบจอซ้าย-ขวา */
+  margin-left: -1rem;
+  margin-right: -1rem;
+  border-radius: 0;
+  overflow: hidden;
+  border: none !important;
+  background: transparent;
+  box-shadow: none !important;
+  margin-top: 4px;
+  margin-bottom: 0;
+  position: relative;
+  cursor: pointer;
+  z-index: 1;
+}
+
+/* เลเยอร์ไล่เฉดสีดำด้านล่างของรูปภาพ ให้กลืนไปกับพื้นหลัง #0d0e12 */
+.track-banner-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60%;
+  background: linear-gradient(to top, #0d0e12 0%, #0d0e12 10%, rgba(13, 14, 18, 0.75) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* --- นำคลาส CSS ใหม่ 3 ตัวนี้ แปะต่อท้ายด้านล่างได้เลยครับ --- */
+.rule-alert-box {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(20, 22, 28, 0.6) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #cbd5e1;
+  font-size: 0.8rem;
+  /* แสงเงาสีเหลืองสะท้อนขอบบน */
+  box-shadow: 0 6px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(245, 158, 11, 0.25);
+}
+
+.player-display-box {
+  background: linear-gradient(90deg, rgba(30, 33, 45, 0.7) 0%, rgba(13, 14, 18, 0.9) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  /* แสงกระจกฝ้า */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.history-content-box {
+  background: rgba(0, 0, 0, 0.5); /* หลุมดำลึกๆ สำหรับโชว์ผลทายเก่า */
+  border-radius: 8px;
+  padding: 14px;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); /* มิติบุ๋มลงไป */
+  border-left: 3px solid #10b981; /* คงลูกเล่นขีดซ้ายบอกสเตตัส */
+}
+.track-banner-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.track-banner-box:hover .track-banner-img {
+  transform: scale(1.03);
+}
+.track-banner-tag {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(13, 14, 18, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+/* --- Driver Card UI --- */
+.driver-slot-card {
+  background: rgba(20, 22, 30, 0.4);
+  border: none; /* ⬅️ ลบขอบทึบด้านนอกออก ปล่อยให้เนียนไปกับพื้นหลัง */
+  border-radius: 12px;
+  height: 110px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* ⬅️ เพิ่มเงาบางๆ ให้การ์ดลอยขึ้น */
+}
+.driver-slot-card:hover {
+  background: rgba(30, 33, 45, 0.6);
+  transform: translateY(-2px);
+}
+/* --- สถานะเมื่อเลือกนักแข่งแล้ว (การ์ดเรืองแสง) --- */
+.driver-slot-card.filled {
+  border: none; /* ⬅️ ลบเส้นขอบออกทั้งหมด */
+  background: linear-gradient(145deg, rgba(30, 33, 45, 0.7) 0%, rgba(13, 14, 18, 0.95) 100%);
+  /* ⬅️ เพิ่มเงาขอบกระจกด้านบน (inset ขาว) และเพิ่มแสงเรืองสีทีมที่ขอบล่างให้สว่างขึ้น */
+  box-shadow: 0 12px 30px rgba(0,0,0,0.6), 
+              inset 0 1px 0 rgba(255,255,255,0.05),
+              inset 0 -4px 15px -5px var(--team-color, transparent);
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding: 12px;
+}
+
+/* แสง Backlight สาดเบาๆ จากมุมขวาล่างไปด้านหลังนักแข่ง */
+.driver-slot-card.filled::before {
+  content: ''; 
+  position: absolute; 
+  inset: 0;
+  background: radial-gradient(circle at bottom right, var(--team-color, transparent) 0%, transparent 70%);
+  opacity: 0.12; /* ปรับความสว่างของแสงหลังนักแข่งตรงนี้ (แนะนำ 0.1 ถึง 0.2) */
+  z-index: 0;
+  mix-blend-mode: screen; /* ช่วยให้แสงดูนุ่มนวลขึ้น */
+}
+.fl-card { height: 90px; }
+.slot-badge-ui {
+  position: absolute;
+  top: 8px; 
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  z-index: 2;
+  display: flex; 
+  align-items: center; 
+  gap: 4px;
+}
+.slot-empty-state { 
+  color: rgba(255, 255, 255, 0.4); 
+  text-align: center; 
+}
+.slot-filled-state { 
+  position: relative; 
+  z-index: 2; 
+  width: 100%; 
+  height: 100%; 
+}
+.driver-name-ui { 
+  font-size: 0.92rem; 
+  font-weight: 700; 
+  color: #fff; 
+  margin-top: 18px; 
+  line-height: 1.1; 
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8); 
+  max-width: 75%;
+}
+.fl-card .driver-name-ui { 
+  margin-top: 6px; 
+  font-size: 1.05rem; 
+}
+.driver-team-ui { 
+  font-size: 0.65rem; 
+  color: #cbd5e1; 
+  margin-top: 2px; 
+  text-transform: uppercase; 
+  font-weight: 600; 
+}
+.driver-img-ui {
+  position: absolute;
+  bottom: -12px; 
+  right: -10px;
+  height: 90px; 
+  width: 90px;
+  object-fit: cover; 
+  object-position: top;
+  z-index: 1;
+  filter: drop-shadow(-2px 2px 5px rgba(0,0,0,0.5));
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 70%, rgba(0,0,0,0) 100%);
+}
+.fl-card .driver-img-ui { 
+  height: 80px; 
+  width: 80px; 
+  right: 10px; 
+  bottom: -10px;
+}
+
+/* --- Bottom Sheet Modal --- */
+.bottom-sheet-modal .modal-dialog-bottom {
+  display: flex;
+  align-items: flex-end;
+  min-height: 100%;
+  margin: 0 auto;
+  max-width: 540px;
+}
+.bottom-sheet-modal .modal-content {
+  border-radius: 20px 20px 0 0;
+  background: #11131a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: none !important;
+  animation: slideUpModal 0.3s ease-out;
+  width: 100%;
+}
+@keyframes slideUpModal { 
+  from { transform: translateY(100%); } 
+  to { transform: translateY(0); } 
+}
+.driver-list-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 8px; 
+}
+.driver-pick-btn {
+  background: rgba(26, 29, 38, 0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-left: 4px solid var(--team-color, #555);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  min-height: 65px;
+  transition: all 0.15s ease;
+}
+.driver-pick-btn:hover { 
+  background: rgba(40, 45, 60, 0.95); 
+  transform: translateY(-1px);
+}
+.driver-pick-name { 
+  font-size: 0.82rem; 
+  font-weight: 700; 
+  color: #fff; 
+  position: relative; 
+  z-index: 2; 
+  line-height: 1.15; 
+  max-width: 75%;
+}
+.driver-pick-team { 
+  font-size: 0.62rem; 
+  color: #94a3b8; 
+  position: relative; 
+  z-index: 2; 
+  margin-top: 2px;
+}
+.driver-pick-img { 
+  position: absolute; 
+  right: -5px; 
+  bottom: 0; 
+  height: 58px; 
+  width: 50px; 
+  object-fit: cover; 
+  object-position: top; 
+  opacity: 0.85; 
+  z-index: 1; 
+}
+.text-purple { color: #a855f7 !important; }
+/* --- โลโก้ทีมใต้ชื่อนักแข่ง (ขนาดเล็ก แสดงสีเต็ม) --- */
+.team-logo-mini {
+  display: block;
+  margin-top: 6px;       /* ระยะห่างจากชื่อทีมด้านบน */
+  width: 75px;           /* ปรับความกว้างโลโก้ */
+  height: 24px;          /* ปรับความสูงโลโก้ */
+  object-fit: contain;
+  object-position: left center; /* บังคับให้โลโก้ชิดซ้ายตรงกับตัวอักษร */
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6)); /* เพิ่มเงาให้โลโก้ลอยมีมิติ */
+}
+
+/* ดันข้อความชื่อและทีมให้ลอยขึ้นมาอยู่เหนือลายน้ำ */
+.driver-name-ui, .driver-team-ui {
+  position: relative;
+  z-index: 2;
+}
+/* --- Player List Cards (ทรงเพรียว จัดกึ่งกลาง รถอยู่ถัดจากชื่อ) --- */
+.player-list-card {
+  background: linear-gradient(90deg, rgba(25, 28, 38, 0.7) 0%, rgba(15, 17, 22, 0.9) 100%); 
+  border: none; 
+  border-radius: 12px;
+  padding: 6px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  height: 58px;
+  margin-bottom: 6px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+.player-list-card:hover {
+  transform: translateX(4px); 
+  background: linear-gradient(90deg, rgba(35, 40, 52, 0.9) 0%, rgba(20, 22, 28, 1) 100%);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6), inset 2px 0 0 var(--team-color);
+}
+
+/* แถบสี Gradient สาดแสงจากด้านซ้าย */
+.player-list-card::before {
+  content: ''; 
+  position: absolute; 
+  top: 0; left: 0; bottom: 0; right: 35%;
+  background: linear-gradient(90deg, var(--team-color) 0%, rgba(0,0,0,0) 100%);
+  opacity: 0.45; 
+  z-index: 0;
+  mix-blend-mode: screen;
+}
+
+/* ลายน้ำโลโก้ทีม (จางๆ ฝั่งขวาของรถ) */
+.player-list-watermark {
+  position: absolute;
+  right: 22%;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 85%;
+  opacity: 0.06;
+  z-index: 1;
+  filter: grayscale(100%);
+  pointer-events: none;
+}
+
+/* รูปรถ F1 (ย้ายไปอยู่ตรงกลาง ถัดจากชื่อผู้เล่น) */
+.player-list-car-img {
+  position: absolute;
+  left: 52%; /* จัดตำแหน่งให้อยู่กึ่งกลางการ์ด (ถัดจากชื่อ) */
+  top: 50%;
+  transform: translate(-50%, -50%); /* ดึงให้อยู่ตรงกลางระหว่างขอบบน-ล่างเป๊ะๆ */
+  height: 36px; /* ลดขนาดรถให้เล็กลง พอเหมาะกับการ์ด */
+  max-width: 42%; /* ป้องกันรถยาวไปชนชื่อหรือคะแนน */
+  width: auto;
+  object-fit: contain;
+  z-index: 2;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
+  pointer-events: none;
+}
+
+/* เนื้อหาบนการ์ด (ชื่อ อันดับ คะแนน) */
+.player-list-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* ดึงชื่อและคะแนนให้อยู่กึ่งกลางขอบบน-ล่าง */
+  width: 100%;
+  height: 100%;
+}
+
+/* ฝั่งซ้าย: อันดับและชื่อผู้เล่น */
+.player-list-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0; /* เอาตัวดันข้อความออก เพื่อให้ชื่ออยู่ตรงกลางการ์ดพอดี */
+  max-width: 35%;   /* กั้นพื้นที่ไว้ไม่ให้ชื่อยาวไปทับหน้ารถ */
+}
+.player-list-rank {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  min-width: 18px;
+}
+.player-list-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ฝั่งขวา: คะแนนรวมและป้ายบวกคะแนน */
+.player-list-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1px;
+}
+.pts-gain-badge {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  font-weight: 800;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  line-height: 1.1;
+}
+.player-list-total {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffb703;
+  line-height: 1;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+.player-list-total .pts-lbl {
+  font-size: 0.65rem;
+  color: #cbd5e1;
+}
+/* --- Telemetry Dashboard Widgets (Bento Box / Data-First Design) --- */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.telemetry-widget {
+  background: #0f1118; /* ดำด้านเข้มสนิท ดูดุดัน */
+  border-radius: 12px;
+  padding: 14px 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  min-height: 85px; /* ล็อกความสูงให้เท่ากันทุกกล่อง */
+  border: 1px solid rgba(255, 255, 255, 0.03); /* ขอบบางเฉียบสุดๆ */
+}
+
+/* เส้นไฟ LED คาดด้านซ้าย (Left Accent Bar) */
+.telemetry-widget::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 0; width: 3px;
+}
+.border-red::before { background: #ef4444; box-shadow: 2px 0 8px rgba(239, 68, 68, 0.4); }
+.border-yellow::before { background: #f59e0b; box-shadow: 2px 0 8px rgba(245, 158, 11, 0.4); }
+.border-blue::before { background: #0ea5e9; box-shadow: 2px 0 8px rgba(14, 165, 233, 0.4); }
+.border-green::before { background: #22c55e; box-shadow: 2px 0 8px rgba(34, 197, 94, 0.4); }
+
+/* หัวข้อและไอคอน จัดวางชิดกันแบบมินิมอล */
+.widget-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.widget-head i {
+  font-size: 0.85rem;
+}
+.widget-head span {
+  font-size: 0.65rem;
+  color: #64748b; /* สีเทาเข้ม ลดความเด่นของหัวข้อ */
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ข้อมูล ดึงให้เด่นที่สุด จัดชิดซ้าย */
+.widget-value {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9; /* ขาวสว่าง */
+  line-height: 1.25;
+  text-align: left;
+  word-break: break-word;
+}
+/* --- กล่องสรุปข้อมูล (Race Intel) --- */
+.telemetry-summary-card {
+  background: #11131a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding-bottom: 8px;
+}
+.summary-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+/* --- Track Map Card (พื้นดำทึบ Premium Black) --- */
+.track-map-card {
+  background: #030406; /* สีดำทึบสุดล้ำ */
+  border: 1px solid rgba(225, 6, 0, 0.4);
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.8), inset 0 0 20px rgba(225, 6, 0, 0.05);
+  transition: all 0.2s ease;
+  position: relative;
+}
+/* เส้นแสง LED คาดด้านบน */
+.track-map-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--f1-red), transparent);
+  z-index: 2;
+}
+.track-map-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--f1-red);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.9), inset 0 0 25px rgba(225, 6, 0, 0.15);
+}
+.track-map-header {
+  padding: 12px 16px;
+  background: rgba(13, 14, 18, 0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+.track-map-body {
+  padding: 20px 15px 30px 15px; /* เพิ่มพื้นที่ล่างให้รูปสนามไม่อึดอัด */
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+/* ใส่แสงสะท้อนเบาๆ ให้เส้นสนามสีขาวเด่นขึ้นบนพื้นดำทึบ */
+.track-map-body img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.15)); 
+}
+
+/* --- Thumbnail Cards (การ์ดภาพตัวอย่าง พร้อมภาพเบลอเป็นพื้นหลัง) --- */
+.thumbnail-card {
+  position: relative;
+  height: 90px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  transition: all 0.2s ease;
+}
+.thumbnail-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--f1-red);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+}
+.thumb-bg-blur {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(4px) brightness(0.5);
+  transform: scale(1.1);
+  z-index: 0;
+}
+.thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 14, 18, 0.65);
+  z-index: 1;
+}
+.thumb-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.thumb-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+.thumb-icon-action {
+  position: relative;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(225, 6, 0, 0.8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  box-shadow: 0 0 10px rgba(225, 6, 0, 0.5);
+}
+/* --- สไตล์กล่องแสดงภาพผลซ้อมทันทีในหน้าจอ --- */
+.rc-card-img-preview {
+  background: #181a24;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+.rc-card-img-preview:hover {
+  border-color: var(--f1-red);
+  transform: translateY(-1px);
+}
+.rc-card-img-preview img {
+  max-height: 250px;
+  object-fit: contain;
+  background-color: #000;
+}
+.pirelli-tire-img {
+  width: 70px !important; 
+  height: 70px !important;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  animation: spinTire 15s linear infinite;
+}
+/* =========================================================
+   UNIFIED TELEMETRY CARD (F1 Broadcast Spec Sheet)
+   ========================================================= */
+.unified-telemetry-card {
+  background: linear-gradient(180deg, #0a0c10 0%, #050608 100%);
+  border: none; /* ⬅️ ลบขอบทึบออก */
+  border-radius: 16px;
+  overflow: hidden;
+  /* ⬅️ ใช้เงาดำหนาขึ้น และใส่สันกระจก (inset) ด้านบนแทนเส้นขอบ */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+/* เส้นไฟ LED สีแดงคาดขอบบนสุดของการ์ด */
+.unified-telemetry-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, transparent, #e10600, #ff4d4d, #e10600, transparent);
+  z-index: 3;
+}
+
+/* --- โซนบน: แผนผังสนามพื้นดำสนิท --- */
+.utc-map-section {
+  background: #030406;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s ease;
+}
+.utc-map-section:hover {
+  background: #080a0f;
+}
+.utc-map-header {
+  padding: 12px 16px 6px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 0.5px;
+}
+.utc-map-body {
+  padding: 10px 16px 22px 16px;
+  text-align: center;
+}
+.utc-map-body img {
+  width: 100%;
+  max-height: 195px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.14));
+}
+
+/* --- โซนล่าง: ตารางสเปกไร้เส้นคั่น --- */
+.utc-specs-section {
+  padding: 14px 12px 14px 12px;
+  background: linear-gradient(180deg, rgba(16, 18, 26, 0.9) 0%, #090a0f 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.utc-specs-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 1px;
+  padding: 0 8px 10px 8px;
+  text-transform: uppercase;
+}
+
+.spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px; /* ระยะห่างบางๆ ระหว่างบรรทัดโดยไม่ใช้เส้นคั่น */
+}
+
+.spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  gap: 12px;
+  transition: transform 0.15s ease;
+}
+
+/* แถบสี Gradient โปร่งแสงสาดจากซ้ายไปขวา (สลับบรรทัดเว้นบรรทัด) */
+.spec-row.tint-red {
+  background: linear-gradient(90deg, rgba(225, 6, 0, 0.09) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%);
+}
+.spec-row.tint-blue {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.09) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%);
+}
+.spec-row.tint-gold {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.09) 0%, rgba(255, 255, 255, 0.02) 45%, transparent 100%);
+}
+
+/* ฝั่งซ้าย: ไอคอน + ชื่อหัวข้อ */
+.spec-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.spec-icon {
+  width: 18px;
+  text-align: center;
+  font-size: 0.9rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* ไอคอนล้อยาง Pirelli เล็กกะทัดรัด */
+.spec-tire-icon {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  animation: spinTire 15s linear infinite;
+}
+
+/* ฝั่งขวา: ค่าข้อมูล */
+.spec-val {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #f8fafc;
+  text-align: right;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* --- ป้ายวงกลมสีขอบยาง Pirelli (Soft / Medium / Hard) --- */
+.pirelli-compounds-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tyre-compound-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0b0c10;
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.6), inset 0 0 5px rgba(0,0,0,0.8);
+  position: relative;
+}
+/* ขอบสีตามชนิดยาง F1 */
+.tyre-soft {
+  border: 2.5px solid #ef4444; /* แดง Soft */
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.25), inset 0 0 4px rgba(239, 68, 68, 0.2);
+}
+.tyre-medium {
+  border: 2.5px solid #facc15; /* เหลือง Medium */
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.25), inset 0 0 4px rgba(250, 204, 21, 0.2);
+}
+.tyre-hard {
+  border: 2.5px solid #f8fafc; /* ขาว Hard */
+  box-shadow: 0 0 8px rgba(248, 250, 252, 0.2), inset 0 0 4px rgba(248, 250, 252, 0.15);
+}
+
+/* --- กล่อง Key Note ด้านล่างสุด --- */
+.utc-keynote-box {
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 183, 3, 0.05);
+  border-left: 3px solid #ffb703;
+  border-radius: 6px 10px 10px 6px;
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+}
+.utc-keynote-box i {
+  margin-top: 2px;
+}
+/* --- Sci-Fi Typography (ฟอนต์หัวข้อและชื่อผู้เล่น) --- */
+.player-name, 
+.king-name, 
+.prince-name, 
+.player-list-name,
+.driver-pick-name,
+#myPlayerName {
+  font-family: 'Rajdhani', sans-serif !important;
+  letter-spacing: 1px; /* เพิ่มระยะห่างตัวอักษรนิดๆ ให้ดูสปอร์ตขึ้น */
+}
+
+.f1-font, 
+.utc-specs-title, 
+.rc-section-title,
+.utc-map-header,
+.widget-label,
+.spec-label span,
+.track-map-header {
+  font-family: 'Rajdhani', sans-serif !important;
+  letter-spacing: 0.5px;
+}
+/* =========================================================
+   FROSTED GLASS FLOATING NAVIGATION (Zero-Bounding Box)
+   ========================================================= */
+
+/* 1. แถบเมนูลอยตัว (Floating) + กระจกฝ้า */
+.f1-nav-tabs {
+  position: fixed;
+  bottom: 20px !important; 
+  left: 50%;
+  transform: translateX(-50%);
+  width: 92% !important; 
+  max-width: 500px;
+  background: rgba(12, 14, 20, 0.8) !important; /* ปรับให้เข้มขึ้นนิดนึงเพื่อให้ไฟ LED เด่น */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 24px !important; 
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8) !important;
+  padding: 8px 10px;
+  z-index: 1050;
+  justify-content: space-between;
+}
+
+.f1-nav-item {
+  flex: 1;
+  text-align: center;
+}
+
+/* 2. ลบกรอบสี่เหลี่ยม พื้นหลัง และเงาของปุ่มทิ้งทั้งหมด 100% */
+.f1-nav-link, 
+.f1-nav-link:focus, 
+.f1-nav-link:active, 
+.f1-nav-link:hover,
+.f1-nav-link.active {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #64748b !important;
+  padding: 5px 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+/* 3. แอนิเมชันไอคอนและข้อความ */
+.f1-nav-link i {
+  font-size: 1.2rem;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease, filter 0.3s ease;
+}
+.f1-nav-link span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: 'Rajdhani', sans-serif;
+  transition: all 0.3s ease;
+}
+
+/* 4. สถานะ Active: ไอคอนเรืองแสงและเด้งขึ้น */
+.f1-nav-link.active i {
+  color: #e10600 !important;
+  transform: translateY(-4px); 
+  filter: drop-shadow(0 4px 8px rgba(225, 6, 0, 0.6)); /* ไอคอนเรืองแสงด้วยตัวเอง ไร้กรอบ */
+}
+.f1-nav-link.active span {
+  transform: translateY(2px);
+  color: #ffffff !important; 
+}
+
+/* 5. เส้นไฟ LED ขีดสั้น (F1 LED Dash) ใต้ไอคอน */
+.f1-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 12px; /* ขยายเป็นเส้นขีดสั้นๆ แทนจุดกลม */
+  height: 3px;
+  border-radius: 4px;
+  background: #e10600;
+  box-shadow: 0 0 8px #e10600, 0 0 12px #e10600;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  opacity: 0;
+}
+
+/* เมื่อ Active ให้เส้นไฟ LED กางออก */
+.f1-nav-link.active::after {
+  transform: translateX(-50%) scaleX(1);
+  opacity: 1;
+}
+
+/* ซ่อนเส้นแถบด้านบนของเดิมที่อาจค้างอยู่ */
+.f1-nav-link::before {
+  display: none !important;
+}
+
+/* =========================================================
+   SKELETON LOADERS (แทนที่ Spinner หมุนๆ)
+   ========================================================= */
+.skeleton-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.skeleton-card {
+  background: rgba(26, 29, 38, 0.5); /* สีพื้นหลังการ์ดจางๆ */
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* เอฟเฟกต์แสงวิ่งพาดผ่าน (Shimmer) */
+.skeleton-card::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-avatar {
+  width: 45px; 
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.skeleton-text-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.skeleton-line.w-75 { width: 75%; }
+.skeleton-line.w-50 { width: 50%; }
+
+.skeleton-score {
+  width: 40px; 
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+/* =========================================================
+   COMMUNITY TAB: CONSENSUS BAR & PADDOCK PASS TICKETS
+   ========================================================= */
+
+/* --- 1. กล่องหลอดพลังโหวต (Consensus Telemetry) --- */
+.consensus-telemetry-box {
+  background: linear-gradient(145deg, #0f111a 0%, #07080c 100%);
+  border: none; /* ⬅️ ลบขอบทึบออก */
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+.consensus-telemetry-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 4px;
+  background: linear-gradient(180deg, #00f5d4, #00bbf9);
+}
+
+.consensus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.consensus-item {
+  margin-bottom: 12px;
+}
+.consensus-item:last-child {
+  margin-bottom: 0;
+}
+
+.consensus-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.8rem;
+  margin-bottom: 5px;
+}
+.consensus-driver {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+.consensus-pct {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+/* รางหลอดเกจพลัง */
+.consensus-track {
+  width: 100%;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 1px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+}
+.consensus-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+/* --- 2. ตั๋วโพยทายผล (Paddock Pass Ticket) --- */
+.pred-ticket {
+  /* ⬅️ ปรับพื้นหลังตั๋วให้สว่างขึ้นนิดนึงเพื่อแยกจากฉากหลังโดยไม่ต้องใช้ขอบ */
+  background: linear-gradient(90deg, rgba(20,23,33,0.8) 0%, rgba(13,15,22,0.9) 72%, rgba(18,20,28,0.9) 72%, rgba(10,12,18,1) 100%);
+  border: none; /* ⬅️ ลบขอบทึบออก */
+  border-radius: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+.pred-ticket:hover {
+  transform: translateY(-3px);
+  /* ⬅️ ขอบบนจะสว่างขึ้นนิดนึงตอนชี้เมาส์ (Hover) */
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* รอยเว้าครึ่งวงกลมขอบบน-ล่าง (จำลองรอยฉีกตั๋ว) */
+.pred-ticket::before,
+.pred-ticket::after {
+  content: '';
+  position: absolute;
+  left: 72%;
+  width: 16px;
+  height: 16px;
+  background: #0d0e12; 
+  border: none; /* ⬅️ ลบขอบทึบรอยฉีกออกให้เนียนกับตั๋ว */
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); /* ⬅️ ใช้เงาดำสร้างความลึกแทน */
+  border-radius: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+.pred-ticket::before { top: -9px; }
+.pred-ticket::after { bottom: -9px; }
+
+/* ฝั่งซ้ายของตั๋ว (72%): ชื่อผู้เล่น + รายชื่อนักแข่งที่ทาย */
+.ticket-main {
+  width: 72%;
+  padding: 12px 14px;
+  border-right: 1.5px dashed rgba(255, 255, 255, 0.12); /* เส้นปรุฉีกตั๋ว */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ticket-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ticket-player-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ticket-pass-tag {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.58rem;
+  color: #64748b;
+  letter-spacing: 1px;
+}
+
+/* ตาราง 2x2 แสดง P1 - P4 บนตั๋ว */
+.ticket-picks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+}
+.ticket-pick-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ticket-pos-pill {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.ticket-pos-pill.p1 { background: rgba(255, 183, 3, 0.2); color: #ffb703; border: 1px solid rgba(255, 183, 3, 0.4); }
+.ticket-pos-pill.p2 { background: rgba(203, 213, 225, 0.15); color: #cbd5e1; }
+.ticket-pos-pill.p3 { background: rgba(217, 119, 6, 0.2); color: #fb923c; }
+
+.ticket-driver-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ticket-driver-txt {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-fl-bar {
+  margin-top: 7px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #c084fc;
+  font-weight: 700;
+}
+
+/* ฝั่งขวาของตั๋ว (28%): หางตั๋วโชว์แต้ม หรือ ตราประทับ */
+.ticket-stub {
+  width: 28%;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  background: radial-gradient(circle at center, rgba(225, 6, 0, 0.06), transparent 75%);
+}
+.ticket-pts-val {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+}
+.ticket-pts-lbl {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.ticket-pending-stamp {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #f59e0b;
+  border: 1.5px solid #f59e0b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transform: rotate(-8deg);
+  letter-spacing: 1px;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+}
+
+/* --- 3. การ์ดตั๋วตอนยังไม่เปิดเผยข้อมูล + ตราประทับ LOCKED --- */
+.locked-ticket-card {
+  background: linear-gradient(135deg, #101218 0%, #07080c 100%);
+  border: 1px dashed rgba(225, 6, 0, 0.35);
+  border-radius: 16px;
+  padding: 28px 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* ตราประทับสีแดงเข้ม LOCKED คาดเฉียง */
+.rubber-stamp-locked {
+  display: inline-block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #e10600;
+  border: 3px solid #e10600;
+  padding: 4px 18px;
+  border-radius: 8px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+  margin-bottom: 14px;
+  background: rgba(225, 6, 0, 0.08);
+  box-shadow: 0 0 15px rgba(225, 6, 0, 0.3), inset 0 0 10px rgba(225, 6, 0, 0.2);
+  text-shadow: 0 0 8px rgba(225, 6, 0, 0.6);
+}
+/* =========================================================
+   RACE ARCHIVE: SEGMENTED SWITCHER & CINEMATIC FULL-BLEED
+   ========================================================= */
+
+/* 1. สวิตช์แคปซูลสลับโหมด (iOS / F1 TV Style) */
+.archive-segmented-control {
+  display: flex;
+  background: #06070a;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 4px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.archive-seg-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+/* สถานะเมื่อเลือกโหมด Qualifying (เรืองแสงโทนฟ้า Cyan) */
+.archive-seg-btn.active-quali {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(15, 23, 42, 0.95) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.2);
+}
+.archive-seg-btn.active-quali i {
+  color: #38bdf8;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+}
+
+/* สถานะเมื่อเลือกโหมด Main Race (เรืองแสงโทนแดง-ทอง Racing) */
+.archive-seg-btn.active-race {
+  background: linear-gradient(135deg, rgba(225, 6, 0, 0.25) 0%, rgba(15, 23, 42, 0.95) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(225, 6, 0, 0.45);
+  box-shadow: 0 4px 15px rgba(225, 6, 0, 0.25);
+}
+.archive-seg-btn.active-race i {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+}
+
+/* จุดไฟ LED เล็กๆ บนสวิตช์ บอกว่ามีรูปพร้อมดูหรือไม่ */
+.seg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #334155;
+  transition: all 0.3s ease;
+}
+.seg-dot.ready {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+/* 2. Sci-Fi Header พร้อมเส้น Gradient */
+.archive-scifi-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.archive-scifi-header span {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.archive-scifi-line {
+  flex-grow: 1;
+  height: 2px;
+  margin-left: 12px;
+  /* ไล่สีแดง F1 (#e10600) จากซ้ายแล้วค่อยๆ จางหายไปทางขวา */
+  background: linear-gradient(90deg, #e10600 0%, rgba(225, 6, 0, 0.4) 50%, transparent 100%) !important;
+  box-shadow: 0 0 8px rgba(225, 6, 0, 0.5); 
+}
+
+/* 3. กรอบภาพ Cinematic Full-Bleed (ไร้กรอบซ้อนกรอบ) */
+.archive-cinematic-viewer {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #050608;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
+  cursor: pointer;
+}
+
+.archive-fullbleed-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  transition: transform 0.35s ease, opacity 0.25s ease;
+}
+.archive-cinematic-viewer:active .archive-fullbleed-img {
+  transform: scale(0.985);
+}
+
+/* 4. ปุ่มขยาย Floating Frosted Glass มุมขวาล่าง */
+.archive-floating-zoom {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(10, 12, 18, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 5px 12px;
+  border-radius: 30px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* 5. หน้าจอเรดาร์ Standby เมื่อไม่มีภาพ */
+.archive-empty-telemetry {
+  padding: 45px 20px;
+  text-align: center;
+  background: radial-gradient(circle at center, rgba(225, 6, 0, 0.05) 0%, transparent 70%);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+.archive-empty-telemetry i {
+  font-size: 2rem;
+  color: #475569;
+}
+@keyframes spinTire {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+/* --- ปุ่มการ์ดนักแข่ง --- */
+.driver-pick-btn {
+  background: rgba(20, 20, 25, 0.6); 
+  border: none; 
+  border-radius: 4px; 
+  padding: 16px 15px 16px 105px !important; /* เพิ่มพื้นที่ด้านซ้ายให้รูปใหญ่ขึ้น */
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+  text-align: left;
+  min-height: 95px; /* บังคับความสูงของการ์ดให้มีพื้นที่รับรูป */
+}
+
+.driver-pick-btn::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%); 
+  width: 75%; 
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--team-color, #fff) 50%, transparent 100%);
+  box-shadow: 0 -2px 10px var(--team-color, rgba(255,255,255,0.4));
+  z-index: 2;
+}
+
+/* จัดการนักแข่งที่เลือกไปแล้วให้ลอยขึ้น และเรืองแสงเป็นสีประจำทีม */
+.driver-pick-btn.already-selected {
+  background: rgba(25, 28, 35, 0.95); /* พื้นหลังเข้มขึ้นนิดนึงเพื่อให้ไฟเรืองแสงเด่นชัด */
+  opacity: 1; 
+  transform: translateY(-4px); 
+  border: 1px solid var(--team-color, #fff); /* ตีเส้นขอบเป็นสีประจำทีม */
+  
+  /* สร้างมิติเงาดำรองพื้น + แสงเรือง (Glow) สีทีมทั้งด้านนอกและด้านใน */
+  box-shadow: 
+    0 8px 15px rgba(0, 0, 0, 0.8), /* เงาดำให้การ์ดดูลอย */
+    0 0 15px var(--team-color, rgba(255, 255, 255, 0.3)), /* แสงเรืองขอบนอก */
+    inset 0 0 20px var(--team-color, rgba(255, 255, 255, 0.2)); /* แสงเรืองขอบใน */
+}
+
+/* --- รูปนักแข่ง (ขยายซูมให้ใหญ่เกือบชนขอบ) --- */
+.driver-pick-img {
+  position: absolute;
+  top: 50%;
+  left: 10px; /* ขยับชิดซ้าย */
+  /* ใช้ scale(1.1) เพื่อซูมขยายรูปให้ใหญ่ขึ้นเอาชนะขอบใสของไฟล์ PNG */
+  transform: translateY(-50%) scale(1.3); 
+  height: 90%; 
+  width: 85px; 
+  object-fit: contain;
+  z-index: 1;
+}
+
+/* --- ป้ายบอกตำแหน่ง (ดันชิดมุมขวาบนมากขึ้น) --- */
+.driver-pick-badges {
+  position: absolute;
+  top: 6px; /* ขยับขึ้นไปชิดขอบบน */
+  right: 6px; /* ขยับไปชิดขวาให้สุด */
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 3px;
+  z-index: 5;
+  align-items: center;
+}
+/* --- ปรับขนาดป้ายให้เล็กลง ไม่เกะกะ --- */
+.pick-badge {
+  font-size: 0.45rem; /* ลดขนาดตัวอักษรลง */
+  font-weight: 800;
+  padding: 1px 4px; /* ลดความหนาของกรอบ */
+  border-radius: 2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.6); /* ลดเงาให้บางลง */
+  font-family: 'Titillium Web', sans-serif;
+  line-height: 1.2;
+}
+
+.pick-badge.p1 { color: #000; background: var(--gold); border: 1px solid #000; text-shadow: none; }
+.pick-badge.p2 { color: #000; background: var(--silver); border: 1px solid #000; text-shadow: none; }
+.pick-badge.p3 { color: #fff; background: var(--bronze); border: 1px solid rgba(255,255,255,0.3); }
+.pick-badge.p4 { color: #fff; background: #475569; border: 1px solid rgba(255,255,255,0.2); }
+.pick-badge.pfl { color: #fff; background: #a855f7; border: 1px solid rgba(255,255,255,0.2); }
+
+/* โลโก้ทีมขนาดเล็กท้ายชื่อทีม */
+.driver-pick-team-logo {
+  height: 12px;
+  margin-left: 6px;
+  vertical-align: middle;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+/* --- หัวข้อสไตล์ F1 Official (มีขีดแดงด้านซ้าย) --- */
+.section-header-f1 {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  padding-left: 10px;
+  border-left: 4px solid var(--f1-red, #e10600); /* ดึงสีแดง F1 มาใช้ */
+  background: transparent;
+  line-height: 1.2;
+}
+
+/* --- กล่องครอบไร้กรอบ (สำหรับใส่รูปภาพ) --- */
+.practice-borderless-container {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* --- กรอบช่องว่างแบบ Telemetry HUD (ทำงานเฉพาะตอนที่ยังไม่ได้เลือกนักแข่ง) --- */
+.slot-empty-state:not(.d-none) {
+  border: 1px dashed rgba(255, 255, 255, 0.15); /* ⬅️ ลดความแข็งของเส้นประลง */
+  background: rgba(15, 15, 20, 0.4);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 85px;
+  width: 100%;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.driver-slot-card:hover .slot-empty-state:not(.d-none) {
+  border-color: rgba(225, 6, 0, 0.5); /* ⬅️ เปลี่ยนเป็นเรืองแสงขอบแดงตอนชี้ (Hover) */
+  background: rgba(25, 25, 35, 0.6);
+}
+
+.driver-slot-card:hover .slot-empty-state:not(.d-none) {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(25, 25, 35, 0.8);
+}
+
+/* --- ไอคอนเป้าเล็ง (ปรับให้สว่างขึ้น) --- */
+.empty-icon {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 6px;
+}
+
+/* --- ข้อความ AWAITING INPUT ฟอนต์ดิจิทัล --- */
+.telemetry-await {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 1.2px;
+}
+
+/* --- เซอร์เซอร์กะพริบ --- */
+.blink-cursor {
+  display: inline-block;
+  margin-left: 2px;
+  color: #e10600; /* เปลี่ยนขีดกะพริบเป็นสีแดง F1 ให้เด่นขึ้น */
+  font-weight: bold;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+/* ==========================================
+   BROADCAST HUD HERO BANNER (COMPLETE SET)
+   ========================================== */
+
+
+/* 3. ชื่อหลัก F1 PREDICTOR (ปรับขนาดให้เล็กลง) */
+.brand-title-hud {
+  font-size: 1.15rem; /* ลดขนาดคำว่า PREDICTOR ลง (เดิม 1.4rem) */
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.f1-badge-hud {
+  background-color: #e10600;
+  color: #ffffff;
+  padding: 1px 4px; /* ลดความกว้างซ้าย-ขวาของป้ายแดงลง */
+  border-radius: 3px;
+  margin-right: 5px; /* ลดระยะห่างระหว่างป้ายกับข้อความนิดหน่อย */
+  font-size: 0.8em; /* ลดขนาดอักษร F1 ลง (เดิม 0.9em) */
+}
+/* 4. จุดไฟบอกสถานะสีแดงกะพริบ (Live Indicator) */
+.live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: #e10600;
+  border-radius: 50%;
+  margin-right: 8px;
+  box-shadow: 0 0 6px #e10600;
+  animation: hudBlink 1.8s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes hudBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(0.85); }
+}
+
+/* 5. ข้อความรองฟอนต์ดิจิทัล (2026 OFFICIAL FANTASY LEAGUE) */
+.hud-subtitle {
+  font-family: 'Share Tech Mono', monospace !important;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.75); /* สีเทาสว่าง */
+  letter-spacing: 1.5px;
+  line-height: 1;
+  display: inline-block;
+}
+
+/* 6. ปุ่มลงทะเบียนสไตล์ System Badge (ป้ายสถานะระบบ) */
+.btn-sys-badge {
+  background: rgba(20, 22, 28, 0.65); /* พื้นหลังเทาดำโปร่งแสง */
+  border: 1px solid rgba(255, 255, 255, 0.18); /* เส้นขอบกระจกบางๆ */
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 4px; /* สี่เหลี่ยมผืนผ้ามุมคมนิดๆ */
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  padding: 4px 9px;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ไอคอนรูปคนและเส้นคั่นด้านในปุ่ม */
+.btn-sys-badge i {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.2); /* เส้นตรงบางๆ คั่นกลาง */
+  padding-right: 6px;
+  margin-right: 6px;
+  line-height: 1;
+}
+
+.btn-sys-badge:hover, .btn-sys-badge:active {
+  background: rgba(35, 40, 50, 0.85);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+/* ==========================================
+   ปุ่มสลับแท็บ (Toggle) และ ตารางนักแข่ง F1
+   ========================================== */
+
+/* --- 1. ปุ่ม Toggle สลับตาราง --- */
+.standings-toggle-wrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+.standings-toggle {
+  background: #15151e;
+  border-radius: 6px;
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.standings-toggle .toggle-btn {
+  background: transparent;
+  color: #888;
+  border: none;
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-family: 'Titillium Web', 'Kanit', sans-serif;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.standings-toggle .toggle-btn.active {
+  background: #2b2b36;
+  color: #fff;
+}
+
+/* --- 2. โครงสร้างตารางนักแข่ง F1 --- */
+.f1-official-standings {
+  font-family: 'Titillium Web', sans-serif;
+}
+.f1-standings-header {
+  display: flex; /* บังคับให้อยู่บรรทัดเดียวกัน */
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.65rem;
+  color: #888;
+}
+.f1-standings-row {
+  display: flex; /* บังคับให้อยู่บรรทัดเดียวกัน */
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.f1-standings-row:last-child {
+  border-bottom: none;
+}
+
+/* --- 3. การแบ่งคอลัมน์ในตาราง --- */
+.col-pos {
+  width: 15%;
+  font-weight: bold;
+  color: #fff;
+  font-size: 0.9rem;
+}
+.col-driver {
+  width: 65%;
+  display: flex; /* ให้รูปและชื่ออยู่บรรทัดเดียวกัน */
+  align-items: center;
+}
+.col-pts {
+  width: 20%;
+  text-align: right;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+/* --- 4. รูปนักแข่งและชื่อทีม --- */
+.driver-headshot {
+  width: 52px !important; /* ล็อกความกว้างรูป */
+  height: 52px !important; /* ล็อกความสูงรูป */
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 14px;
+  background: transparent;
+}
+.driver-info {
+  display: flex;
+  flex-direction: column;
+}
+.driver-info .driver-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+}
+.driver-info .team-name {
+  font-size: 0.65rem;
+  color: #888;
+  margin-top: 2px;
+}
+.team-logo-inline {
+  height: 10px !important; /* ล็อกความสูงโลโก้ทีมให้เล็ก */
+  width: auto !important;
+  margin-left: 6px;
+  opacity: 0.8;
+}
+.f1-team-cards-container {
+  gap: 10px;
+}
+.team-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 65px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--team-color) 45%, transparent) 0%, rgba(30, 30, 40, 1) 40%, rgba(20, 20, 28, 1) 100%);
+  padding: 0 16px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.team-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 2;
+  width: 35%;
+}
+.team-card-left .team-pos {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+  min-width: 20px;
+}
+.team-card-left .team-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.team-card-center {
+  position: absolute;
+  left: 38%;
+  width: 45%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.team-bg-logo {
+  position: absolute;
+  height: 130%;
+  right: -10px;
+  opacity: 0.1;
+  filter: grayscale(100%);
+  object-fit: contain;
+}
+.team-car-img {
+  position: relative;
+  width: 100%;
+  max-width: 140px;
+  object-fit: contain;
+  z-index: 2;
+}
+.team-card-right {
+  z-index: 2;
+  text-align: right;
+  width: 20%;
+}
+.team-card-right .team-pts {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffd700;
+}
+.team-card-right .pts-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #aaa;
+  margin-left: 2px;
+}
+/* =========================================================
+   UX/UI UPGRADE: PIT WALL DYNAMIC TIMER & SCORE BADGES
+   ========================================================= */
+
+/* เปลี่ยนสีไฟสถานะบนกล่อง Countdown ตามความเร่งด่วน */
+.countdown-box.status-warning {
+  border-top-color: #f59e0b !important;
+}
+.countdown-box.status-warning::before {
+  content: 'PIT LANE CLOSING SOON';
+  color: #f59e0b;
+}
+.countdown-box.status-warning::after {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+  animation: blink 0.6s infinite;
+}
+
+.countdown-box.status-critical {
+  border-top-color: #e10600 !important;
+  box-shadow: inset 0 0 25px rgba(225, 6, 0, 0.25), 0 5px 15px rgba(0,0,0,0.6) !important;
+}
+.countdown-box.status-critical::before {
+  content: 'FINAL CALL - DEPLOY NOW';
+  color: #ff3838;
+}
+.countdown-box.status-critical::after {
+  background: #ff3838;
+  box-shadow: 0 0 12px #ff3838;
+  animation: blink 0.3s infinite;
+}
+
+.countdown-box.status-closed {
+  border-top-color: #475569 !important;
+}
+.countdown-box.status-closed::before {
+  content: 'PARC FERMÉ - SESSION LOCKED';
+  color: #64748b;
+}
+.countdown-box.status-closed::after {
+  background: #ef4444;
+  box-shadow: none;
+  animation: none;
+}
+
+/* เอฟเฟกต์ตัวเลขกระตุกเบาๆ เมื่อวินาทีเปลี่ยน */
+.timer-num {
+  transition: color 0.2s ease, transform 0.1s ease;
+  display: inline-block;
+  min-width: 42px;
+}
+
+/* ป้ายกำกับคะแนนแบบละเอียดในหน้า Breakdown */
+.score-pill-exact {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+.score-pill-partial {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+.score-pill-miss {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+/* =========================================================
+   UX/UI UPGRADE: PLAYER CAREER STATS (SUPER LICENSE)
+   ========================================================= */
+
+.stats-super-license {
+  position: relative;
+  width: 100%;
+}
+
+/* แสงออร่าสะท้อนสีทีมจากพื้นหลัง */
+.stats-super-license::before {
+  content: '';
+  position: absolute;
+  top: -20px; left: 50%;
+  transform: translateX(-50%);
+  width: 120%; height: 150px;
+  background: radial-gradient(circle at top, var(--team-color) 0%, transparent 60%);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 1. ส่วนหัวบัตร (Header) */
+.sl-header {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, rgba(20, 22, 28, 0.8) 0%, rgba(10, 12, 16, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--team-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.sl-avatar {
+  width: 48px;
+  height: 48px;
+  background: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+.sl-avatar img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.sl-info {
+  flex-grow: 1;
+  text-align: left;
+}
+.sl-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.sl-team {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sl-rank {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.sl-rank-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+.sl-rank-val {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+}
+
+/* 2. กล่องประวัติคะแนน (History List) */
+.sl-history-container {
+  max-height: 220px;
+  overflow-y: auto;
+  background: #0a0a0e;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px;
+}
+.sl-history-container::-webkit-scrollbar {
+  width: 4px;
+}
+.sl-history-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+
+.sl-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.2s ease;
+}
+.sl-history-row:last-child {
+  border-bottom: none;
+}
+.sl-history-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+}
+.sl-history-race {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+/* =========================================================
+   UX/UI UPGRADE: PLAYER CAREER STATS (SUPER LICENSE)
+   ========================================================= */
+
+.stats-super-license {
+  position: relative;
+  width: 100%;
+}
+
+.stats-super-license::before {
+  content: '';
+  position: absolute;
+  top: -20px; left: 50%;
+  transform: translateX(-50%);
+  width: 120%; height: 150px;
+  background: radial-gradient(circle at top, var(--team-color) 0%, transparent 60%);
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sl-header {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, rgba(20, 22, 28, 0.8) 0%, rgba(10, 12, 16, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 4px solid var(--team-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.sl-avatar {
+  width: 48px;
+  height: 48px;
+  background: #000;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.sl-avatar img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.sl-info {
+  flex-grow: 1;
+}
+
+.sl-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.sl-team {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sl-rank {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.sl-rank-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.55rem;
+  color: #94a3b8;
+  letter-spacing: 1px;
+}
+
+.sl-rank-val {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+}
+
+/* Telemetry Bento Box */
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.telemetry-widget {
+  background: #0a0a0e;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.border-yellow { border-left: 3px solid #ffc107; }
+.border-blue { border-left: 3px solid #0dcaf0; }
+.border-purple { border-left: 3px solid #a855f7; }
+
+.widget-head {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.widget-value {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: 800;
+  line-height: 1;
+}
+/* =========================================================
+   F1 DRIVER HERO MODAL STYLES (Editorial Stack Layout)
+   ========================================================= */
+.hero-modal-content {
+  background-color: #0a0e1c !important; 
+  transition: background 0.5s ease;
+  
+  /* เพิ่มคำสั่งบังคับให้เต็มจอทะลุขอบมือถือ */
+  min-height: 100vh;
+  min-height: 100dvh; /* ใช้ 100dvh (Dynamic Viewport) สำหรับมือถือรุ่นใหม่ๆ */
+  border-radius: 0 !important; /* ลบขอบโค้งออกให้แนบสนิทขอบจอ */
+  margin: 0 !important;
+}
+
+/* เพิ่มคำสั่งนี้เพื่อบังคับไม่ให้ Modal Dialog มีขอบบน */
+.modal-fullscreen {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.hero-driver-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 3.8rem;
+  line-height: 0.85;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  text-transform: uppercase;
+}
+.hero-team-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+.hero-driver-photo-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center; /* ⬅️ เปลี่ยนเป็น center ให้อยู่กึ่งกลาง */
+  padding-right: 0; /* ⬅️ เอาที่ดันขอบออก */
+  z-index: 2;
+}
+.hero-driver-cutout {
+  width: 125%; /* ลดขนาดความกว้างลงไม่ให้ล้นเกินไป */
+  max-width: 500px;
+  max-height: 75vh; /* ⚠️ จำกัดความสูงไม่ให้เกิน 65% ของหน้าจอ ป้องกันการบังตัวหนังสือ */
+  height: auto;
+  object-fit: contain;
+  transform-origin: bottom center;
+  margin-bottom: 23vh; /* ใช้ vh เพื่อกะระยะให้พ้นตัวเลขด้านล่างอย่างพอดี */
+  animation: scaleInHero 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.hero-photo-blur {
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 55%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 60%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%);
+  pointer-events: none;
+}
+
+/* --- แผงสถิติ Editorial Stack --- */
+.hero-bottom-stats {
+  animation: fadeSlideUp 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.editorial-stat-block {
+  display: flex;
+  flex-direction: column;
+  line-height: 0.75; /* บีบช่องไฟระหว่างบรรทัดให้แน่น */
+}
+.stat-label-mini {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  margin-left: 4px;
+}
+.stat-value-massive {
+  font-family: 'Share Tech Mono', 'Rajdhani', sans-serif;
+  font-size: 110px; /* ขนาดใหญ่ยักษ์ตามสไตล์ Silverstone */
+  font-weight: 900;
+  letter-spacing: -0.06em; /* บีบช่องไฟให้ตัวเลขชิดกัน */
+  margin-left: -5px; /* ดึงกลับมาทางซ้ายนิดนึงชดเชยช่องว่างของฟอนต์ */
+}
+.text-gold {
+  color: #EDB40B; /* สีเหลืองทอง F1 */
+  text-shadow: 0 4px 15px rgba(237, 180, 11, 0.25);
+}
+.stat-unit {
+  font-size: 1.8rem;
+  color: #EDB40B;
+  margin-left: 5px;
+  opacity: 0.7;
+  letter-spacing: 0;
+}
+/* เอฟเฟกต์ตัวเลขไล่สีโปร่งใส (Fade-out) */
+.text-gradient-fade {
+  background: linear-gradient(to bottom, #ffffff 0%, rgba(255, 255, 255, 0.3) 55%, transparent 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); /* เงาบางๆ กันกลืนกับฉากหลัง */
+}
+
+@keyframes scaleInHero {
+  from { opacity: 0; transform: scale(0.92) translateY(50px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* =========================================
+   OVERRIDE: CINEMATIC COUNTDOWN & TRACK BANNER
+========================================= */
+
+/* ถอดกรอบนาฬิกาออก 100% และดึงให้ลอยซ้อนทับภาพปก */
+.countdown-box { 
+  background: transparent !important; 
+  border: none !important; 
+  box-shadow: none !important; 
+  padding: 0 !important; 
+  position: relative; 
+  z-index: 3 !important; 
+  margin-top: -55px !important; /* ดึงนาฬิกาขึ้นไปทับภาพ 55px */
+  margin-bottom: 20px !important; 
+  text-align: center; 
+}
+
+/* ซ่อนข้อความ PIT WALL STATUS และจุดไฟกระพริบของเดิมทิ้ง */
+.countdown-box::before,
+.countdown-box::after { 
+  display: none !important; 
+}
+
+/* ลบแสงเงาสเตตัสเวลาใกล้หมด */
+.countdown-box.status-warning,
+.countdown-box.status-critical {
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+/* ปรับแต่งปุ่ม Dropdown เลือกสนามให้เรียบหรูเข้ากับ Cinematic Theme */
+.race-select-cinematic {
+  background-color: #161820 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 13px 16px !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6) !important;
+}
+.race-select-cinematic:focus {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8) !important;
+}
+/* =========================================
+   แก้ไขกรอบและรูปภาพสนามแข่ง (หน้าทายผล)
+========================================= */
+
+/* 1. ดันกล่องภาพให้ห่างจากหัวข้อ PREDICTION FORM */
+.track-banner-box {
+  width: calc(100% + 2rem) !important; 
+  margin-left: -1rem !important;
+  margin-right: -1rem !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  position: relative !important;
+  margin-top: 24px !important; /* ⬅️ เพิ่มระยะห่างด้านบนให้อากาศถ่ายเท */
+  margin-bottom: 0 !important;
+}
+
+/* 2. ปลดล็อกความสูงภาพ ให้แสดงเต็มสัดส่วนจริง */
+.track-banner-img {
+  width: 100% !important;
+  max-height: none !important; /* ⬅️ ยกเลิกการจำกัดความสูงที่ 200px ทิ้งไป */
+  height: auto !important; /* ⬅️ ให้ภาพขยายความสูงตามสัดส่วนจริงโดยอัตโนมัติ */
+  object-fit: cover !important;
+  display: block !important;
+}
+/* =========================================================
+   HOLOGRAPHIC TELEMETRY & HUD TARGETING (COMPLETE SET)
+   ========================================================= */
+
+/* 1. โครงสร้างหลักของการ์ด (ปรับความสูงให้พอดี ไม่สูงเกินไป) */
+.driver-slot-card {
+  background: rgba(13, 14, 18, 0.25) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  height: 115px !important; 
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.fl-card {
+  height: 95px !important;
+}
+
+/* 2. ตอนยังไม่ได้เลือกนักแข่ง (HUD Targeting Brackets) */
+.slot-empty-state:not(.d-none) {
+  border: none !important;
+  border-radius: 4px !important;
+  min-height: 100% !important;
+  width: 100% !important;
+  position: relative !important;
+  background-color: rgba(255, 255, 255, 0.015) !important;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to left, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to top, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to left, rgba(255, 255, 255, 0.22) 2px, transparent 2px),
+    linear-gradient(to top, rgba(255, 255, 255, 0.22) 2px, transparent 2px) !important;
+  background-position: 
+    0 0, 0 0, 
+    100% 0, 100% 0, 
+    0 100%, 0 100%, 
+    100% 100%, 100% 100% !important;
+  background-size: 12px 12px !important;
+  background-repeat: no-repeat !important;
+  transition: all 0.25s ease !important;
+}
+
+.driver-slot-card:hover .slot-empty-state:not(.d-none),
+.driver-slot-card:active .slot-empty-state:not(.d-none) {
+  background-color: rgba(225, 6, 0, 0.06) !important;
+  background-image: 
+    linear-gradient(to right, #e10600 2px, transparent 2px),
+    linear-gradient(to bottom, #e10600 2px, transparent 2px),
+    linear-gradient(to left, #e10600 2px, transparent 2px),
+    linear-gradient(to bottom, #e10600 2px, transparent 2px),
+    linear-gradient(to right, #e10600 2px, transparent 2px),
+    linear-gradient(to top, #e10600 2px, transparent 2px),
+    linear-gradient(to left, #e10600 2px, transparent 2px),
+    linear-gradient(to top, #e10600 2px, transparent 2px) !important;
+  box-shadow: inset 0 0 25px rgba(225, 6, 0, 0.12) !important;
+}
+
+.empty-icon {
+  font-size: 1.3rem !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  margin-bottom: 6px !important;
+  animation: hudRadarPulse 2.4s infinite ease-in-out !important;
+  transition: color 0.25s ease, transform 0.25s ease !important;
+}
+.driver-slot-card:hover .empty-icon {
+  color: #e10600 !important;
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 0 8px rgba(225, 6, 0, 0.8)) !important;
+}
+
+@keyframes hudRadarPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 0.85; transform: scale(1.06); }
+}
+
+.telemetry-await {
+  font-family: 'Share Tech Mono', monospace !important;
+  font-size: 0.72rem !important;
+  color: rgba(255, 255, 255, 0.45) !important;
+  letter-spacing: 1.5px !important;
+}
+
+/* 3. ตอนเลือกนักแข่งแล้ว (Holographic Telemetry) */
+.driver-slot-card.filled {
+  background: linear-gradient(90deg, 
+    color-mix(in srgb, var(--team-color, #e10600) 16%, transparent) 0%, 
+    rgba(18, 20, 28, 0.5) 45%, 
+    rgba(13, 14, 18, 0.95) 100%) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 12px 14px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7) !important;
+}
+
+.driver-slot-card.filled::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: auto !important;
+  width: 3px !important;
+  height: 100% !important;
+  background: var(--team-color, #e10600) !important;
+  box-shadow: 0 0 12px var(--team-color, #e10600), 2px 0 8px var(--team-color, #e10600) !important;
+  opacity: 1 !important;
+  z-index: 4 !important;
+  mix-blend-mode: normal !important;
+}
+
+/* 4. ป้ายบอกตำแหน่ง (กลับมาขวาบน แต่ย่อขนาดลง 20% ไม่ให้บังหน้า) */
+.slot-badge-ui {
+  top: 6px !important;
+  right: 6px !important;
+  left: auto !important;
+  background: rgba(10, 12, 16, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(8px) !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  z-index: 5 !important;
+  transform: scale(0.8) !important; /* ⬅️ ย่อขนาดป้ายลง 20% */
+  transform-origin: top right !important; /* ⬅️ ให้หดเข้ามุมขวาบน */
+}
+
+/* 5. ชื่อนักแข่งและทีม (ดึงกลับขึ้นมาที่เดิม) */
+.driver-name-ui {
+  margin-top: 12px !important; /* ⬅️ ดึงกลับขึ้นมาด้านบน */
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+  max-width: 65% !important;
+}
+.fl-card .driver-name-ui {
+  margin-top: 10px !important;
+  font-size: 1.1rem !important;
+}
+
+.driver-team-ui {
+  font-family: 'Rajdhani', sans-serif !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  color: var(--team-color, #cbd5e1) !important;
+  letter-spacing: 1px !important;
+  margin-top: 1px !important;
+}
+
+.team-logo-mini {
+  margin-top: 6px !important;
+  height: 18px !important;
+  width: auto !important;
+  max-width: 65px !important;
+  opacity: 0.85 !important;
+}
+
+/* 6. ภาพนักแข่ง (ขยับนิดหน่อยเพื่อหลบป้ายด้านบน) */
+.driver-img-ui {
+  position: absolute !important;
+  bottom: -8px !important;
+  right: 0px !important; /* ขยับชิดขวา */
+  height: 110px !important; /* ลดความสูงเล็กน้อยเพื่อเว้นที่ให้ป้าย P1-P4 */
+  width: 105px !important;
+  object-fit: cover !important;
+  object-position: top center !important;
+  z-index: 1 !important;
+  filter: contrast(1.08) drop-shadow(-5px 2px 10px rgba(0, 0, 0, 0.8)) !important;
+  mask-image: radial-gradient(circle at 75% 35%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 88%) !important;
+  -webkit-mask-image: radial-gradient(circle at 75% 35%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 88%) !important;
+}
+.fl-card .driver-img-ui {
+  height: 95px !important;
+  width: 95px !important;
+  right: 8px !important;
+  bottom: -8px !important;
+}
+/* =========================================================
+   F1 OFFICIAL STYLE FLOATING NAV (CAPSULE GLASSMORPHISM)
+   ========================================================= */
+
+/* 1. ปรับทรงกล่องให้เป็นแคปซูลโค้งมน (border-radius: 50px) และเป็นกระจกฝ้าใส */
+.f1-nav-tabs {
+  position: fixed !important;
+  bottom: 25px !important; 
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 94% !important; 
+  max-width: 480px !important;
+  
+  /* ปรับความใสได้ตรงเลขตัวสุดท้าย (ยิ่งใกล้ยิ่ง 0 ยิ่งใส) */
+  background: rgba(50, 55, 65, 0.15) !important; 
+  backdrop-filter: blur(25px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(150%) !important;
+  
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 50px !important; /* ⬅️ ทรงแคปซูล */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  padding: 12px 10px 10px 10px !important;
+  z-index: 1050 !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.f1-nav-item {
+  flex: 1 !important;
+  text-align: center !important;
+}
+
+/* 2. รีเซ็ตปุ่มด้านในให้เรียบที่สุด */
+.f1-nav-link, 
+.f1-nav-link:focus, 
+.f1-nav-link:active, 
+.f1-nav-link:hover,
+.f1-nav-link.active {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  position: relative !important;
+}
+
+/* 3. สถานะปกติ (สีเทาขาว เรียบหรู) */
+.f1-nav-link i {
+  font-size: 1.15rem !important;
+  color: rgba(255, 255, 255, 0.8) !important; 
+  transition: color 0.3s ease !important;
+  transform: none !important;
+  filter: none !important;
+}
+.f1-nav-link span {
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: color 0.3s ease !important;
+  letter-spacing: 0.5px !important;
+  transform: none !important;
+}
+
+/* 4. สถานะ Active: เปลี่ยนเป็นสีแดง F1 เหมือนแอปออฟฟิเชียล */
+.f1-nav-link.active i,
+.f1-nav-link.active span {
+  color: #ff1801 !important; /* ⬅️ แดงสว่าง */
+}
+
+/* ซ่อนเส้นไฟ LED ขีดล่างและบนของเก่าทิ้งทั้งหมด */
+.f1-nav-link::after,
+.f1-nav-link::before {
+  display: none !important;
+}
