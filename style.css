@@ -3461,12 +3461,13 @@ body {
   margin-bottom: 2px; /* ดันกล่องขึ้นไม่ให้ชิดเส้นเกินไป */
 }
 
-/* ตัวเลขเวลาแบบ Solid คมชัด ไม่ฟุ้งเบลอ */
+/* ตัวเลขเวลา Fastest Sector สีม่วงเรืองแสงอ่อนๆ */
 .lap-flow-style .sector-time {
   font-family: 'Share Tech Mono', monospace;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #475569;
+  color: #c084fc; /* สีม่วงสว่าง */
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.6); /* เอฟเฟกต์เรืองแสงอ่อนๆ */
   background: #11131a; /* บังเส้นแนวนอนด้านหลังให้ดูเนียนตา */
   padding: 0 6px;
   border-radius: 4px;
