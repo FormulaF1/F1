@@ -205,23 +205,18 @@ async function loadResultsSessionData(sessionKey, btnEl) {
 
   const list = document.getElementById('resultsSessionDataList');
   if (!list) return;
-  list.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="text-secondary small f1-font">CALCULATING TRUE RESULTS...</div></div>';
+  list.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="text-secondary small f1-font">CALCULATING OFFICIAL CLASSIFICATION...</div></div>';
   
   try {
-    // 1. ดึงข้อมูลใหม่สดๆ ด้วย fetch ป้องกันปัญหา Cache สลับสนาม
-    const [sessionRes, driversRes, lapsRes, standingsRes] = await Promise.all([
-      fetch(`https://api.openf1.org/v1/sessions?session_key=${sessionKey}`),
-      fetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
-      fetch(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`),
+    // ใช้ fetchOpenF1Cached เพื่อป้องกันปัญหา API Rate Limit (429) และสลับแท็บได้ทันที
+    const [sessionData, drivers, laps, standingsRes] = await Promise.all([
+      fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?session_key=${sessionKey}`),
+      fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
+      fetchOpenF1Cached(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`),
       fetch('https://api.jolpi.ca/ergast/f1/current/driverStandings.json')
     ]);
     
-    const sessionData = await sessionRes.json();
-    const drivers = await driversRes.json();
-    const laps = await lapsRes.json();
     const standingsData = await standingsRes.json();
-
-    // เช็กว่าเป็นรอบแข่งจริง (Race/Sprint) หรือรอบซ้อม
     const sessionName = (sessionData[0] && sessionData[0].session_name) ? sessionData[0].session_name.toLowerCase() : '';
     const isRace = sessionName === 'race' || sessionName === 'sprint';
     
@@ -234,7 +229,6 @@ async function loadResultsSessionData(sessionKey, btnEl) {
       });
     }
 
-    // 2. คำนวณข้อมูลสถิติของรถแต่ละคันจาก /laps (FIA Logic)
     const driverStats = {};
     let sessionFastestLap = Infinity;
 
@@ -244,25 +238,20 @@ async function loadResultsSessionData(sessionKey, btnEl) {
         if (!driverStats[dNum]) {
           driverStats[dNum] = { maxLap: 0, bestLap: Infinity, finishTime: Infinity };
         }
-        
-        // หา Best Lap
         if (l.lap_duration && l.lap_duration > 0) {
           if (l.lap_duration < driverStats[dNum].bestLap) driverStats[dNum].bestLap = l.lap_duration;
           if (l.lap_duration < sessionFastestLap) sessionFastestLap = l.lap_duration;
         }
-        
-        // หารอบสูงสุดที่วิ่งได้ และเวลาเข้าเส้นชัยในรอบนั้น
         if (l.lap_number && l.lap_number >= driverStats[dNum].maxLap) {
           driverStats[dNum].maxLap = l.lap_number;
           if (l.date_start && l.lap_duration) {
-             driverStats[dNum].finishTime = new Date(l.date_start).getTime() + (l.lap_duration * 1000);
+            driverStats[dNum].finishTime = new Date(l.date_start).getTime() + (l.lap_duration * 1000);
           }
         }
       });
     }
     
-    // 3. แม็ปปิ้งข้อมูลนักแข่งเข้าด้วยกัน
-    let results = drivers.map(d => {
+    let results = (Array.isArray(drivers) ? drivers : []).map(d => {
       const dNum = d.driver_number;
       const stats = driverStats[dNum] || { maxLap: 0, bestLap: Infinity, finishTime: Infinity };
       
@@ -292,40 +281,35 @@ async function loadResultsSessionData(sessionKey, btnEl) {
       };
     });
 
-    // กรองรถที่ไม่ลงวิ่งออก
     results = results.filter(r => r.maxLap > 0 || r.bestLap !== Infinity);
 
-    // 4. เรียงลำดับนักแข่งตามประเภทเซสชัน
     if (isRace) {
-      // 🏎️ แข่งจริง: เรียงตามจำนวนรอบ (มากไปน้อย) -> เวลาเข้าเส้นชัย (น้อยไปมาก)
       results.sort((a, b) => {
         if (b.maxLap !== a.maxLap) return b.maxLap - a.maxLap; 
         return a.finishTime - b.finishTime; 
       });
       
       if (results.length > 0) {
-         const raceWinnerFinishTime = results[0].finishTime;
-         const winnerLaps = results[0].maxLap;
-         
-         results.forEach((r, idx) => {
-            r.pos = idx + 1;
-            if (idx === 0) {
-               r.timeGap = 'Winner';
-            } else if (r.maxLap < winnerLaps) {
-               const lapsBehind = winnerLaps - r.maxLap;
-               r.timeGap = `+${lapsBehind} Laps`; // โดนน็อกรอบ
-            } else if (r.finishTime !== Infinity && raceWinnerFinishTime !== Infinity) {
-               const diffSec = (r.finishTime - raceWinnerFinishTime) / 1000;
-               r.timeGap = `+${diffSec.toFixed(3)}s`; // ตามหลังผู้นำ
-            } else {
-               r.timeGap = 'DNF';
-            }
-         });
+        const raceWinnerFinishTime = results[0].finishTime;
+        const winnerLaps = results[0].maxLap;
+        
+        results.forEach((r, idx) => {
+          r.pos = idx + 1;
+          if (idx === 0) {
+            r.timeGap = `${winnerLaps} Laps`;
+          } else if (r.maxLap < winnerLaps) {
+            const lapsBehind = winnerLaps - r.maxLap;
+            r.timeGap = `+${lapsBehind} ${lapsBehind === 1 ? 'Lap' : 'Laps'}`;
+          } else if (r.finishTime !== Infinity && raceWinnerFinishTime !== Infinity) {
+            const diffSec = (r.finishTime - raceWinnerFinishTime) / 1000;
+            r.timeGap = `+${diffSec.toFixed(3)}s`;
+          } else {
+            r.timeGap = 'DNF';
+          }
+        });
       }
     } else {
-      // ⏱️ ซ้อม/ควอลิฟาย: เรียงตาม Best Lap Time
       results.sort((a, b) => a.bestLap - b.bestLap);
-      
       results.forEach((r, idx) => {
         r.pos = idx + 1;
         if (r.bestLap === Infinity) {
@@ -340,28 +324,28 @@ async function loadResultsSessionData(sessionKey, btnEl) {
     }
 
     if (results.length === 0) {
-      list.innerHTML = `<div class="text-center text-secondary py-4">ไม่มีข้อมูลรถวิ่งในเซสชันนี้</div>`;
+      list.innerHTML = `<div class="text-center text-secondary py-4">ไม่มีข้อมูลเวลาในเซสชันนี้</div>`;
       return;
     }
     
-    // 5. วาดตาราง
-    list.innerHTML = results.map(r => `
-      <div class="f1-standings-row" style="cursor:pointer;" onclick="openDriverHeroCustom(this, '${r.fullName.replace(/'/g, "\\'")}', '${r.seasonPoints}', '${r.seasonPos}')">
-        <div class="col-pos" style="width: 12%;">${r.pos}</div>
-        <div class="col-driver" style="width: 53%;">
-          <img src="${r.headshot}" class="driver-headshot" alt="${r.shortName}" loading="lazy">
-          <div class="driver-info">
-            <div class="driver-name text-white">${r.shortName}</div>
-            <div class="team-name m-0" style="color: ${r.color};">${r.team}</div>
+    list.innerHTML = results.map((r, idx) => {
+      const isFastestOverall = (r.bestLap === sessionFastestLap && sessionFastestLap !== Infinity);
+      return `
+        <div class="f1-standings-row" style="cursor:pointer;" onclick="openDriverHeroCustom(this, '${r.fullName.replace(/'/g, "\\'")}', '${r.seasonPoints}', '${r.seasonPos}')">
+          <div class="col-pos" style="width: 12%;">${r.pos}</div>
+          <div class="col-driver" style="width: 53%;">
+            <img src="${r.headshot}" class="driver-headshot" alt="${r.shortName}" loading="lazy">
+            <div class="driver-info">
+              <div class="driver-name text-white">${r.shortName} ${isFastestOverall ? '<i class="fa-solid fa-stopwatch text-purple ms-1" title="Fastest Lap"></i>' : ''}</div>
+              <div class="team-name m-0" style="color: ${r.color};">${r.team}</div>
+            </div>
+          </div>
+          <div class="col-pts text-end" style="width: 35%; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">
+            <span class="f1-time-pill ${idx === 0 ? 'winner-pill' : ''}">${r.timeGap}</span>
           </div>
         </div>
-        <div class="col-pts text-end" style="width: 35%; font-family: 'Share Tech Mono', monospace; font-size: 0.85rem;">
-           <span class="text-white fw-bold">${r.timeGap}</span>
-           <span class="d-none col-pts-season">${r.seasonPoints}</span>
-           <span class="d-none col-pos-season">${r.seasonPos}</span>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     
   } catch (error) {
     console.error('Session Results Error:', error);
