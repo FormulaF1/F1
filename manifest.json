@@ -1,0 +1,21 @@
+{
+  "name": "F1 Predictor 2026",
+  "short_name": "F1 Predictor",
+  "description": "2026 OFFICIAL FANTASY LEAGUE",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0e12",
+  "theme_color": "#e10600",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
