@@ -36,7 +36,7 @@ const TEAM_COLORS = {
 
 const TEAM_CARS = {
   "Ferrari": "https://lh3.googleusercontent.com/d/16fGNY2kTdnXIoDRjzkXmpbZwOn27xAAR",
-  "Red Bull Racing": "https://lh3.googleusercontent.com/d/1MUwr4Pi3TbBAKIYefrPpVcmfqdqfe-OW",
+  "Red Bull Racing": "https://lh3.googleusercontent.com/d/1R686v8aHDPvewn-_aMgzLktRlwfICUfC",
   "McLaren": "https://lh3.googleusercontent.com/d/1ZFP_jPxbzfRLknkRWj_GhEHRbkBK-l6g",
   "Mercedes": "https://lh3.googleusercontent.com/d/1y_4syJ21I8PbkQ5-O8VCnkKfNMO8_t0d",
   "Aston Martin": "https://lh3.googleusercontent.com/d/17A9qzj-jYzgwDwxZxsUyhj3aZZr9XHSn",
