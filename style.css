@@ -3994,3 +3994,37 @@ body {
   color: #ffffff;
   transform: translateY(-1px);
 }
+/* ========================================== */
+/* 🔘 QUICK PROMPTS CHIPS (PIT WALL RADIO)   */
+/* ========================================== */
+.pit-wall-quick-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 15px;
+  background: rgba(10, 12, 16, 0.75);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  scrollbar-width: none;
+}
+.pit-wall-quick-chips::-webkit-scrollbar { 
+  display: none; 
+}
+.radio-chip-btn {
+  background: rgba(255, 40, 0, 0.12);
+  border: 1px solid rgba(255, 40, 0, 0.35);
+  color: #f8fafc;
+  font-family: 'Chakra Petch', sans-serif;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.radio-chip-btn:hover, .radio-chip-btn:active {
+  background: #ff2800;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 40, 0, 0.4);
+  transform: translateY(-1px);
+}
