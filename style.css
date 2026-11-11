@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 :root { 
   --f1-red: #e10600; 
   --f1-dark-red: #9e0400; 
@@ -2241,13 +2241,8 @@ body {
 }
 
 .driver-slot-card:hover .slot-empty-state:not(.d-none) {
-  border-color: rgba(225, 6, 0, 0.5); /* ⬅️ เปลี่ยนเป็นเรืองแสงขอบแดงตอนชี้ (Hover) */
+  border-color: rgba(225, 6, 0, 0.5);
   background: rgba(25, 25, 35, 0.6);
-}
-
-.driver-slot-card:hover .slot-empty-state:not(.d-none) {
-  border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(25, 25, 35, 0.8);
 }
 
 /* --- ไอคอนเป้าเล็ง (ปรับให้สว่างขึ้น) --- */
@@ -3661,8 +3656,6 @@ body {
 /* ========================================== */
 /* 🔴 PIT WALL RADIO STYLES                   */
 /* ========================================== */
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
-
 /* Overlay พื้นหลังดำโปร่งแสง */
 .pit-wall-overlay {
   position: fixed;
