@@ -37,6 +37,26 @@ function triggerHaptic() {
   if (navigator.vibrate) navigator.vibrate(40); 
 }
 
+// ฟังก์ชันเช็คและคืนค่าปุ่ม Radio เฉพาะเมื่ออยู่หน้าทายผลและไม่มี Modal เลือกนักแข่งเปิดอยู่
+function updateRadioButtonVisibility() {
+  const predTab = document.getElementById('tab-pred');
+  const radioBtn = document.getElementById('btnTeamRadio');
+  const driverModalEl = document.getElementById('driverSelectorModal');
+  const heroModalEl = document.getElementById('driverHeroModal');
+
+  if (!radioBtn) return;
+
+  const isPredTabActive = predTab && predTab.style.display !== 'none';
+  const isDriverModalOpen = driverModalEl && driverModalEl.classList.contains('show');
+  const isHeroModalOpen = heroModalEl && heroModalEl.classList.contains('show');
+
+  if (isPredTabActive && !isDriverModalOpen && !isHeroModalOpen) {
+    radioBtn.style.setProperty('display', 'flex', 'important');
+  } else {
+    radioBtn.style.setProperty('display', 'none', 'important');
+  }
+}
+
 window.onload = function() {
   adminModalInstance = new bootstrap.Modal(document.getElementById('adminModal')); 
   statsModalInstance = new bootstrap.Modal(document.getElementById('statsModal')); 
@@ -48,6 +68,16 @@ window.onload = function() {
   const driverModalEl = document.getElementById('driverSelectorModal');
   if (driverModalEl) {
     driverSelectorModalInstance = new bootstrap.Modal(driverModalEl);
+    driverModalEl.addEventListener('hidden.bs.modal', function () {
+      setTimeout(updateRadioButtonVisibility, 200);
+    });
+  }
+
+  const heroModalEl = document.getElementById('driverHeroModal');
+  if (heroModalEl) {
+    heroModalEl.addEventListener('hidden.bs.modal', function () {
+      setTimeout(updateRadioButtonVisibility, 200);
+    });
   }
 
   const optHtml = '<option value="" disabled selected>-- เลือกนักแข่ง --</option>' + DRIVERS.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
@@ -55,6 +85,10 @@ window.onload = function() {
 
   buildDriverGrid();
   loadData();
+  loadOpenF1Meetings();
+  loadLatestNews();
+  loadDriverStatsAPI();
+  updateRadioButtonVisibility();
 };
 
 function buildDriverGrid() {
@@ -68,7 +102,7 @@ function buildDriverGrid() {
     const logoUrl = TEAM_LOGOS[info.team] ? getDriveDirectLink(TEAM_LOGOS[info.team]) : '';
     const logoHtml = logoUrl ? '<img src="' + logoUrl + '" class="driver-pick-team-logo" alt="">' : '';
 
-    html += '<div class="driver-pick-btn" data-drivername="' + name.replace(/"/g, '&quot;') + '" style="--team-color: ' + info.color + '" onclick="confirmSelectDriver(\'' + safeName + '\')">' +
+    html += '<div class="driver-pick-btn" data-drivername="' + name.replace(/"/g, '&quot;') + '" style="--team-color: ' + info.color + '" onclick="previewDriverBeforeSelect(\'' + safeName + '\')">' +
               '<div class="driver-pick-badges"></div>' +
               '<div class="driver-pick-name">' + name + '</div>' +
               '<div class="driver-pick-team">' + info.team + logoHtml + '</div>' +
@@ -81,6 +115,13 @@ function buildDriverGrid() {
 function openDriverSelector(slotId) {
   triggerHaptic();
   currentSelectingSlot = slotId;
+
+  // 🎯 ซ่อนปุ่ม Radio ทันทีเมื่อเปิดหน้าต่างเลือกนักแข่ง
+  const radioBtn = document.getElementById('btnTeamRadio');
+  if (radioBtn) {
+    radioBtn.style.setProperty('display', 'none', 'important');
+  }
+
   const titles = { 
     'pos1': 'P1 (อันดับที่ 1)', 
     'pos2': 'P2 (อันดับที่ 2)', 
@@ -158,6 +199,7 @@ function confirmSelectDriver(driverName) {
     if (driverSelectorModalInstance) {
       driverSelectorModalInstance.hide();
     }
+    setTimeout(updateRadioButtonVisibility, 250);
   }
 }
 
@@ -319,6 +361,17 @@ function showTab(tabId, el) {
   document.querySelectorAll('.f1-nav-link').forEach(function(l) { l.classList.remove('active'); }); 
   document.getElementById(tabId).style.display = 'block'; 
   el.classList.add('active'); 
+
+  // 🎯 ควบคุมการแสดงผลปุ่ม Radio (แสดงเฉพาะหน้าทายผล tab-pred เท่านั้น)
+  const radioBtn = document.getElementById('btnTeamRadio');
+  if (radioBtn) {
+    if (tabId === 'tab-pred') {
+      radioBtn.style.setProperty('display', 'flex', 'important');
+    } else {
+      radioBtn.style.setProperty('display', 'none', 'important');
+      closeTeamRadio();
+    }
+  }
 }
 
 function forceRefreshData() { 
@@ -379,7 +432,7 @@ function renderUI(data) {
   }
 
   const allRaceOpts = '<option value="" disabled selected>-- เลือกสนาม --</option>' + globalRaces.map(function(r) { return '<option value="' + r.id + '" data-type="' + r.type + '">' + (r.status === 'OPEN' ? '🔴' : (r.status === 'CALCULATED' ? '🏁' : '⚡')) + ' ' + r.name + '</option>'; }).join('');
-  ['selCommRace','adminRace','adRaceDead','adRaceCheck','adMediaRace','selCenterRace','sel2025Race'].forEach(function(id) { let el = document.getElementById(id); if(el) el.innerHTML = allRaceOpts; });
+  ['selCommRace','adminRace','adRaceDead','adRaceCheck','adMediaRace','selCenterRace','sel2025Race', 'selFinishedRace'].forEach(function(id) { let el = document.getElementById(id); if(el) el.innerHTML = allRaceOpts; });
 
   if (globalRaces.length > 0) { document.getElementById('adMediaRace').value = globalRaces[0].id; onAdminMediaRaceChange(); }
   if (openRaces.length > 0) { document.getElementById('selCenterRace').value = openRaces[0].id; document.getElementById('sel2025Race').value = openRaces[0].id; onCenterRaceChange(); on2025RaceChange(); }
@@ -689,6 +742,7 @@ function onCenterRaceChange() {
   document.getElementById('rcWeather').innerHTML = '<span class="weather-icon-animated">' + (info.weather || '-') + '</span>'; 
   document.getElementById('rcPrevWinners').innerText = info.prevWinners || '-'; 
   document.getElementById('rcKeyNote').innerText = info.keyNote || '-';
+  fetchLiveWeather();
 
   const layoutWrapper = document.getElementById('rcTrackLayoutWrapper');
   const layoutImg = document.getElementById('rcTrackLayoutImg');
@@ -700,6 +754,10 @@ function onCenterRaceChange() {
       layoutImg.src = '';
       layoutWrapper.style.display = 'none';
     }
+  }
+
+  if (typeof loadTelemetryHUD === 'function') {
+    loadTelemetryHUD('latest'); // บังคับให้ดึงข้อมูลของสนามล่าสุดเสมอ
   }
 }
 
@@ -960,135 +1018,6 @@ function openBreakdownModal(raceId) {
     });
 }
 
-function getShortDriverName(fullName) {
-  if (!fullName || fullName === '-') return '-';
-  const parts = fullName.trim().split(' ');
-  return parts.length > 1 ? parts[parts.length - 1] : fullName;
-}
-
-function loadCommunityPredictions() {
-  const raceId = document.getElementById('selCommRace').value; 
-  const box = document.getElementById('commContent'); 
-  box.innerHTML = '<div class="text-center text-secondary py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังดึงตั๋วโพยเพื่อน...</div>';
-
-  const currentRace = globalRaces.find(function(r) { return r.id === raceId; });
-  const isCalculated = currentRace && currentRace.status === 'CALCULATED';
-
-  callGAS("getCommunityPredictions", { raceId: raceId }).then(function(res) {
-    if (!res.locked) { 
-      box.innerHTML = 
-        '<div class="locked-ticket-card">' +
-          '<div class="rubber-stamp-locked"><i class="fa-solid fa-lock me-2"></i>LOCKED</div>' +
-          '<div class="text-white fw-bold mb-1" style="font-family:\'Rajdhani\',sans-serif; font-size:1.05rem; letter-spacing:0.5px;">PADDOCK PARC FERMÉ</div>' +
-          '<div class="small text-secondary">' + res.msg + '</div>' +
-        '</div>'; 
-      return; 
-    }
-
-    if (!res.predictions || res.predictions.length === 0) { 
-      box.innerHTML = '<div class="text-center text-muted py-4">ไม่มีใครส่งคำทายในสนามนี้</div>'; 
-      return; 
-    }
-
-    const total = res.predictions.length;
-
-    const p1Counts = {};
-    const flCounts = {};
-    res.predictions.forEach(function(p) {
-      if (p.p1) p1Counts[p.p1] = (p1Counts[p.p1] || 0) + 1;
-      if (p.fl) flCounts[p.fl] = (flCounts[p.fl] || 0) + 1;
-    });
-
-    function getTopStat(countsObj, fallbackText) {
-      let topDriver = '-';
-      let maxCount = 0;
-      Object.keys(countsObj).forEach(function(d) {
-        if (countsObj[d] > maxCount) {
-          maxCount = countsObj[d];
-          topDriver = d;
-        }
-      });
-      if (maxCount === 0) return { driver: fallbackText || '-', pct: 0, count: 0, color: '#e10600' };
-      const pct = Math.round((maxCount / total) * 100);
-      const dInfo = DRIVER_INFO[topDriver] || { color: '#e10600' };
-      const barColor = dInfo.color || '#e10600';
-      return { driver: topDriver, pct: pct, count: maxCount, color: barColor };
-    }
-
-    const topP1Stat = getTopStat(p1Counts, res.topP1);
-    const topFLStat = getTopStat(flCounts, res.topFL);
-
-    let html = 
-      '<div class="consensus-telemetry-box">' +
-        '<div class="consensus-header">' +
-          '<span><i class="fa-solid fa-bolt text-info me-1"></i> CONSENSUS TELEMETRY</span>' +
-          '<span class="badge bg-dark border border-secondary text-light">' + total + ' PADDOCK PASSES</span>' +
-        '</div>' +
-
-        '<div class="consensus-item">' +
-          '<div class="consensus-label-row">' +
-            '<span class="text-secondary small">🏆 มหาชนเทใจ P1: <strong class="consensus-driver ms-1">' + topP1Stat.driver + '</strong></span>' +
-            '<span class="consensus-pct" style="color:' + topP1Stat.color + ';">' + topP1Stat.pct + '% (' + topP1Stat.count + '/' + total + ')</span>' +
-          '</div>' +
-          '<div class="consensus-track">' +
-            '<div class="consensus-fill" style="width:' + topP1Stat.pct + '%; background:' + topP1Stat.color + '; box-shadow: 0 0 10px ' + topP1Stat.color + ';"></div>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="consensus-item">' +
-          '<div class="consensus-label-row">' +
-            '<span class="text-secondary small">⚡ เต็ง Fastest Lap: <strong class="consensus-driver ms-1">' + topFLStat.driver + '</strong></span>' +
-            '<span class="consensus-pct" style="color:' + topFLStat.color + ';">' + topFLStat.pct + '% (' + topFLStat.count + '/' + total + ')</span>' +
-          '</div>' +
-          '<div class="consensus-track">' +
-            '<div class="consensus-fill" style="width:' + topFLStat.pct + '%; background:' + topFLStat.color + '; box-shadow: 0 0 10px ' + topFLStat.color + ';"></div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
-    html += res.predictions.map(function(p, idx) {
-      const c1 = (DRIVER_INFO[p.p1] || {}).color || '#64748b';
-      const c2 = (DRIVER_INFO[p.p2] || {}).color || '#64748b';
-      const c3 = (DRIVER_INFO[p.p3] || {}).color || '#64748b';
-      const c4 = (DRIVER_INFO[p.p4] || {}).color || '#64748b';
-
-      let stubContent = '';
-      if (isCalculated || Number(p.score) > 0) {
-        stubContent = 
-          '<div class="ticket-pts-val text-warning">' + p.score + '</div>' +
-          '<div class="ticket-pts-lbl">POINTS</div>';
-      } else {
-        stubContent = 
-          '<div class="ticket-pending-stamp">LOCKED IN</div>' +
-          '<div class="ticket-pts-lbl mt-1">WAITING</div>';
-      }
-
-      const passNum = String(idx + 1).padStart(2, '0');
-
-      return '<div class="pred-ticket">' +
-               '<div class="ticket-main">' +
-                 '<div class="ticket-player-header">' +
-                   '<div class="ticket-player-name"><i class="fa-solid fa-id-badge text-danger"></i>' + p.player + '</div>' +
-                   '<span class="ticket-pass-tag">PASS #' + passNum + '</span>' +
-                 '</div>' +
-                 '<div class="ticket-picks-grid">' +
-                   '<div class="ticket-pick-item"><span class="ticket-pos-pill p1">P1</span><span class="ticket-driver-dot" style="background:' + c1 + '"></span><span class="ticket-driver-txt">' + getShortDriverName(p.p1) + '</span></div>' +
-                   '<div class="ticket-pick-item"><span class="ticket-pos-pill p2">P2</span><span class="ticket-driver-dot" style="background:' + c2 + '"></span><span class="ticket-driver-txt">' + getShortDriverName(p.p2) + '</span></div>' +
-                   '<div class="ticket-pick-item"><span class="ticket-pos-pill p3">P3</span><span class="ticket-driver-dot" style="background:' + c3 + '"></span><span class="ticket-driver-txt">' + getShortDriverName(p.p3) + '</span></div>' +
-                   '<div class="ticket-pick-item"><span class="ticket-pos-pill">P4</span><span class="ticket-driver-dot" style="background:' + c4 + '"></span><span class="ticket-driver-txt">' + getShortDriverName(p.p4) + '</span></div>' +
-                 '</div>' +
-                 (p.fl ? '<div class="ticket-fl-bar"><i class="fa-solid fa-bolt"></i><span>FL: ' + getShortDriverName(p.fl) + '</span></div>' : '') +
-               '</div>' +
-               '<div class="ticket-stub">' +
-                 stubContent +
-               '</div>' +
-             '</div>';
-    }).join('');
-
-    box.innerHTML = html;
-  });
-}
-
 // =========================================================
 // PLAYER CAREER STATS (SUPER LICENSE + RACE-BY-RACE CHART)
 // =========================================================
@@ -1153,7 +1082,7 @@ function showPlayerStats(playerName) {
     `;
     body.innerHTML = html;
 
-    // การวาดกราฟผ่าน Chart.js (แสดงคะแนนรายสนาม พร้อมป้ายโชว์คะแนนรวมสะสม)
+    // การวาดกราฟผ่าน Chart.js
     if (res.history && res.history.length > 0) {
       if (playerChartInstance) {
         playerChartInstance.destroy();
@@ -1312,18 +1241,75 @@ function matchDriverOption(selectId, apiName) {
   }
 }
 
-function handleFetchOfficialResults() { 
-  const pin = document.getElementById('adminPin').value, raceId = document.getElementById('adminRace').value, btn = document.getElementById('btnApiFetch'); 
+async function handleFetchOfficialResults() { 
+  const pin = document.getElementById('adminPin').value;
+  const raceId = document.getElementById('adminRace').value; 
+  const btn = document.getElementById('btnApiFetch'); 
+  
   if (!pin || !raceId) return; 
-  btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; 
-  callGAS("adminFetchOfficialResults", { pin: pin, raceId: raceId }).then(function(res) { 
-    btn.disabled = false; btn.innerHTML = 'ดึงผลจริง API'; 
-    if (!res.success) { showToast("⚠️ " + res.msg, 'error'); return; } 
-    matchDriverOption('adP1', res.data.p1); matchDriverOption('adP2', res.data.p2); matchDriverOption('adP3', res.data.p3); matchDriverOption('adP4', res.data.p4); 
-    if (res.data.type !== 'Sprint' && res.data.fl) matchDriverOption('adFL', res.data.fl); 
-    if (res.data.url) document.getElementById('adLink').value = res.data.url; 
-    showToast(res.msg, 'success'); 
-  }); 
+  
+  btn.disabled = true; 
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังดึงผล OpenF1...'; 
+  
+  try {
+    const driverRes = await fetch('https://api.openf1.org/v1/drivers?session_key=latest');
+    const drivers = await driverRes.json();
+    
+    const posRes = await fetch('https://api.openf1.org/v1/position?session_key=latest');
+    const positions = await posRes.json();
+    
+    const latestPositions = {};
+    positions.forEach(p => {
+      latestPositions[p.driver_number] = p.position;
+    });
+    
+    let results = { p1: '', p2: '', p3: '', p4: '' };
+    drivers.forEach(d => {
+      const pos = latestPositions[d.driver_number];
+      if (pos === 1) results.p1 = d.full_name;
+      if (pos === 2) results.p2 = d.full_name;
+      if (pos === 3) results.p3 = d.full_name;
+      if (pos === 4) results.p4 = d.full_name;
+    });
+    
+    matchDriverOption('adP1', results.p1); 
+    matchDriverOption('adP2', results.p2); 
+    matchDriverOption('adP3', results.p3); 
+    matchDriverOption('adP4', results.p4); 
+
+    const raceSelect = document.getElementById('adminRace');
+    const isSprint = raceSelect.options[raceSelect.selectedIndex].dataset.type === 'Sprint';
+    
+    if (!isSprint) {
+      const lapsRes = await fetch('https://api.openf1.org/v1/laps?session_key=latest');
+      const laps = await lapsRes.json();
+      
+      let fastestLap = null;
+      let minDuration = Infinity;
+      
+      laps.forEach(lap => {
+        if (lap.lap_duration && lap.lap_duration < minDuration) {
+          minDuration = lap.lap_duration;
+          fastestLap = lap;
+        }
+      });
+      
+      if (fastestLap) {
+        const flDriver = drivers.find(d => d.driver_number === fastestLap.driver_number);
+        if (flDriver) {
+          matchDriverOption('adFL', flDriver.full_name);
+        }
+      }
+    }
+    
+    showToast('ดึงผล P1-P4 และ Fastest Lap สำเร็จ!', 'success');
+  } catch (error) {
+    console.error('OpenF1 API Error:', error);
+    showToast('⚠️ ไม่สามารถเชื่อมต่อ OpenF1 ได้', 'error');
+  } finally {
+    btn.disabled = false; 
+    btn.innerHTML = 'ดึงผลจริง API'; 
+  }
 }
 
 function checkAdminSubmissions() { 
@@ -1456,12 +1442,14 @@ function switchStandings(type) {
   const views = {
     'user': document.getElementById('user-standings-view'),
     'driver': document.getElementById('driver-standings-view'),
-    'team': document.getElementById('team-standings-view')
+    'team': document.getElementById('team-standings-view'),
+    'results': document.getElementById('results-standings-view') 
   };
   const btns = {
     'user': document.getElementById('btn-user-standings'),
     'driver': document.getElementById('btn-driver-standings'),
-    'team': document.getElementById('btn-team-standings')
+    'team': document.getElementById('btn-team-standings'),
+    'results': document.getElementById('btn-results-standings') 
   };
 
   Object.keys(views).forEach(key => {
@@ -1474,11 +1462,8 @@ function switchStandings(type) {
 
   const checkCard = document.getElementById('checkResultCard');
   if (checkCard) {
-    if (type === 'user') {
-      checkCard.style.display = 'block'; 
-    } else {
-      checkCard.style.display = 'none';  
-    }
+    if (type === 'user') checkCard.style.display = 'block'; 
+    else checkCard.style.display = 'none';  
   }
 }
 
@@ -1538,16 +1523,19 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchF1Standings();         
   fetchF1TeamStandings();     
 });
-// ฟังก์ชันสร้างลูกเล่นตัวเลขวิ่ง (Count-up Animation สไตล์ Cubic Ease-out)
+
 function animateCountUp(element, target, duration = 2200) {
   let startTimestamp = null;
-  const targetNum = parseInt(target, 10) || 0;
+  const targetNum = parseInt(String(target).replace(/,/g, '').trim(), 10) || 0;
+  
+  if (targetNum === 0) {
+    element.innerText = "0";
+    return;
+  }
   
   const step = (timestamp) => {
     if (!startTimestamp) startTimestamp = timestamp;
     const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    
-    // สมการความเร่ง Cubic Ease-out (1 - (1-t)^3) ต้นจัด ปลายไหล
     const easeProgress = 1 - Math.pow(1 - progress, 3); 
     element.innerText = Math.floor(easeProgress * targetNum);
     
@@ -1560,37 +1548,6 @@ function animateCountUp(element, target, duration = 2200) {
   window.requestAnimationFrame(step);
 }
 
-// ฟังก์ชันสร้างลูกเล่นตัวเลขวิ่ง (Count-up Animation สไตล์ Cubic Ease-out)
-function animateCountUp(element, target, duration = 2200) {
-  let startTimestamp = null;
-  
-  // แปลงค่าเป้าหมายให้เป็นตัวเลขเสมอ ป้องกันการดึงค่าแล้วติดช่องว่าง
-  const targetNum = parseInt(String(target).replace(/,/g, '').trim(), 10) || 0;
-  
-  // ถ้าเป้าหมายคือ 0 ให้ใส่ 0 ทันที ไม่ต้องวิ่ง
-  if (targetNum === 0) {
-    element.innerText = "0";
-    return;
-  }
-  
-  const step = (timestamp) => {
-    if (!startTimestamp) startTimestamp = timestamp;
-    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-    
-    // สมการความเร่ง Cubic Ease-out (1 - (1-t)^3) ต้นจัด ปลายไหล
-    const easeProgress = 1 - Math.pow(1 - progress, 3); 
-    element.innerText = Math.floor(easeProgress * targetNum);
-    
-    if (progress < 1) {
-      window.requestAnimationFrame(step);
-    } else {
-      element.innerText = targetNum; // จบที่เป้าหมายเป๊ะๆ
-    }
-  };
-  window.requestAnimationFrame(step);
-}
-
-// ฟังก์ชันสำหรับเปิดหน้า F1 Driver Hero
 function openDriverHero(fullName, rowEl) {
   triggerHaptic();
   const info = DRIVER_INFO[fullName];
@@ -1606,25 +1563,760 @@ function openDriverHero(fullName, rowEl) {
   document.getElementById('heroDriverLastName').innerText = lastName;
   document.getElementById('heroTeamName').innerText = info.team;
   document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
-  
   document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
-  
   document.getElementById('heroPos').innerText = 'P' + pos;
 
-  // บังคับเซ็ตค่าเริ่มต้นของ element กลับไปเป็น 0 เสมอก่อนเริ่มนับ
   const ptsEl = document.getElementById('heroPoints');
   ptsEl.innerText = "0"; 
   
-  // ให้ตัวเลขเริ่มวิ่งทันทีที่กดเข้าหน้าต่าง
   setTimeout(() => {
     animateCountUp(ptsEl, pts, 2200); 
   }, 10); 
 
- // ไล่ระดับสี: เริ่มจากสีดำขอบจอ (0%) -> สว่างเป็นสีทีม (15%) -> กลืนกลับไปดำที่ฐาน (65%)
   document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
 
   if (!window.driverHeroModalInstance) {
     window.driverHeroModalInstance = new bootstrap.Modal(document.getElementById('driverHeroModal'));
   }
   window.driverHeroModalInstance.show();
+}
+
+async function loadOpenF1Meetings() {
+  const rSel = document.getElementById('selResultsRace');
+  if (!rSel) return;
+  
+  rSel.innerHTML = '<option value="" disabled selected>-- กำลังโหลดข้อมูลสนาม 2026 --</option>';
+  
+  try {
+    let meetings = null;
+    // 🎯 เช็คว่าเคยโหลดข้อมูลเก็บไว้ใน session แล้วหรือยัง (ป้องกัน Error 429)
+    const cachedMeetings = sessionStorage.getItem('openF1_meetings_2026');
+    
+    if (cachedMeetings) {
+      meetings = JSON.parse(cachedMeetings);
+    } else {
+      const res = await fetch('https://api.openf1.org/v1/meetings?year=2026');
+      if (!res.ok) throw new Error(`API Error: ${res.status}`);
+      meetings = await res.json();
+      // เก็บลง Cache ชั่วคราว
+      sessionStorage.setItem('openF1_meetings_2026', JSON.stringify(meetings));
+    }
+    
+    const now = new Date();
+    const startedMeetings = (Array.isArray(meetings) ? meetings : []).filter(m => {
+      const startDate = new Date(m.date_start);
+      const isTesting = (m.meeting_name || '').toLowerCase().includes('testing');
+      return startDate <= now && !isTesting;
+    });
+    
+    if (startedMeetings.length === 0) {
+      rSel.innerHTML = '<option value="" disabled selected>-- ยังไม่มีสนามที่ทำการแข่งขันในปี 2026 --</option>';
+      return;
+    }
+
+    startedMeetings.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+    
+    let opts = '<option value="" disabled selected>-- เลือกสนาม --</option>';
+    startedMeetings.forEach(m => {
+      opts += `<option value="${m.meeting_key}">🏁 ${m.meeting_name}</option>`;
+    });
+    rSel.innerHTML = opts;
+
+    const latestMeeting = startedMeetings[startedMeetings.length - 1];
+    rSel.value = latestMeeting.meeting_key;
+    onResultsRaceChange();
+    
+  } catch (error) {
+    console.error('OpenF1 Meetings Error:', error);
+    // หากโดน Block (429) หรือมีปัญหาขัดข้อง ให้แสดงข้อความนี้
+    rSel.innerHTML = '<option value="" disabled selected>เชื่อมต่อฐานข้อมูลล่าช้า (API Limit)</option>';
+  }
+}
+
+async function onResultsRaceChange() {
+  const rSel = document.getElementById('selResultsRace');
+  const meetingKey = rSel.value;
+  if (!meetingKey) return;
+  
+  const btnGroup = document.getElementById('resultsSessionBtnGroup');
+  btnGroup.innerHTML = '<span class="text-secondary small"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด Sessions...</span>';
+  
+  try {
+    const res = await fetch(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`);
+    const sessions = await res.json();
+    
+    const now = new Date();
+    
+    const startedSessions = (Array.isArray(sessions) ? sessions : []).filter(s => {
+      return new Date(s.date_start) <= now;
+    });
+    
+    startedSessions.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+    
+    if (startedSessions.length === 0) {
+      btnGroup.innerHTML = '';
+      document.getElementById('resultsSessionDataList').innerHTML = '<div class="text-center text-secondary py-4">ยังไม่มีเซสชันที่เริ่มแข่งขันในสนามนี้</div>';
+      return;
+    }
+
+    const lastIdx = startedSessions.length - 1;
+    btnGroup.innerHTML = startedSessions.map((s, index) => 
+      `<button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 ${index === lastIdx ? 'active text-white border-white' : ''}" style="font-family: 'Rajdhani', sans-serif; font-weight: 700;" onclick="loadResultsSessionData('${s.session_key}', this)">${s.session_name.toUpperCase()}</button>`
+    ).join('');
+    
+    loadResultsSessionData(startedSessions[lastIdx].session_key, btnGroup.lastElementChild);
+    
+  } catch (error) {
+    btnGroup.innerHTML = '<span class="text-danger small">โหลดเซสชันล้มเหลว</span>';
+  }
+}
+
+function refreshTelemetryDashboard(sessionKey = 'latest') {
+  triggerHaptic();
+  
+  if (typeof loadTelemetryHUD === 'function') {
+    loadTelemetryHUD(sessionKey);
+  } else {
+    console.warn("ไม่พบฟังก์ชัน loadTelemetryHUD กรุณาตรวจสอบไฟล์ api-service.js");
+  }
+}
+
+let communityChartInstance = null;
+
+const driverColors = {
+  "Verstappen": "#3671C6", "Perez": "#3671C6", "Hadjar": "#3671C6", 
+  "Norris": "#FF8000", "Piastri": "#FF8000", 
+  "Leclerc": "#E80020", "Hamilton": "#E80020", "Bearman": "#E80020", 
+  "Russell": "#27F4D2", "Antonelli": "#27F4D2", 
+  "Alonso": "#229971", "Stroll": "#229971", 
+};
+
+function renderConsensusChart(predictionsData, isParcFermeClosed) {
+  const lockOverlay = document.getElementById('parcFermeLock');
+  const totalBadge = document.getElementById('totalVotersBadge');
+  
+  const totalVotes = predictionsData.length;
+  if (totalBadge) {
+    totalBadge.innerHTML = `${totalVotes} PADDOCK PASSES`;
+  }
+
+  if (lockOverlay) {
+    if (!isParcFermeClosed) {
+      lockOverlay.style.display = 'flex'; 
+    } else {
+      lockOverlay.style.display = 'none'; 
+    }
+  }
+
+  if (totalVotes === 0) return;
+
+  let p1Counts = {};
+  let flCounts = {};
+
+  predictionsData.forEach(p => {
+    const p1 = p.p1 || p.pos1; 
+    const fl = p.fl || p.posFL;
+    
+    if (p1) p1Counts[p1] = (p1Counts[p1] || 0) + 1;
+    if (fl) flCounts[fl] = (flCounts[fl] || 0) + 1;
+  });
+
+  const p1Labels = Object.keys(p1Counts);
+  const p1Data = Object.values(p1Counts);
+  const p1Colors = p1Labels.map(name => driverColors[name.split(' ').pop()] || '#888888');
+
+  const canvasEl = document.getElementById('p1PredictionChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  
+  if (communityChartInstance) {
+    communityChartInstance.destroy();
+  }
+
+  communityChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: p1Labels,
+      datasets: [{
+        data: p1Data,
+        backgroundColor: p1Colors,
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '75%', 
+      plugins: {
+        legend: {
+          position: 'right', 
+          labels: { 
+            color: '#ffffff', 
+            font: { family: 'Kanit', size: 10 },
+            boxWidth: 10,
+            padding: 15,
+            generateLabels: function(chart) {
+              const data = chart.data;
+              if (data.labels.length && data.datasets.length) {
+                const dataset = data.datasets[0];
+                const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                
+                return data.labels.map(function(label, i) {
+                  const value = dataset.data[i];
+                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                  const color = dataset.backgroundColor[i];
+                  
+                  return {
+                    text: `${label} (${percentage}% - ${value}/${total})`,
+                    fillStyle: color,
+                    strokeStyle: color,
+                    fontColor: '#ffffff',
+                    lineWidth: 0,
+                    hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                    index: i
+                  };
+                });
+              }
+              return [];
+            }
+          }
+        }
+      }
+    }
+  });
+
+  let topFlDriver = "-";
+  let topFlCount = 0;
+  
+  for (const [driver, count] of Object.entries(flCounts)) {
+    if (count > topFlCount) {
+      topFlCount = count;
+      topFlDriver = driver;
+    }
+  }
+
+  if (topFlCount > 0) {
+    const flPercent = Math.round((topFlCount / totalVotes) * 100);
+    const flTextEl = document.getElementById('consensusFlText');
+    const flPercentEl = document.getElementById('consensusFlPercent');
+    const flBarEl = document.getElementById('consensusFlBar');
+
+    if (flTextEl) flTextEl.innerHTML = `<i class="fa-solid fa-bolt text-info"></i> เต็ง Fastest Lap: ${topFlDriver}`;
+    if (flPercentEl) flPercentEl.innerText = `${flPercent}% (${topFlCount}/${totalVotes})`;
+    if (flBarEl) flBarEl.style.width = `${flPercent}%`;
+  }
+}
+
+function getShortDriverName(fullName) {
+  if (!fullName || fullName === '-') return '-';
+  const parts = fullName.trim().split(' ');
+  return parts.length > 1 ? parts[parts.length - 1] : fullName;
+}
+
+function loadCommunityPredictions() {
+  const raceId = document.getElementById('selCommRace').value; 
+  const box = document.getElementById('commContent'); 
+  
+  const consensusBox = document.getElementById('consensusContainer');
+  if (consensusBox) {
+    consensusBox.style.display = 'block';
+  }
+
+  box.innerHTML = '<div class="text-center text-secondary py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังดึงตั๋วโพยเพื่อน...</div>';
+
+  const currentRace = globalRaces.find(function(r) { return r.id === raceId; });
+  const isCalculated = currentRace && currentRace.status === 'CALCULATED';
+
+  callGAS("getCommunityPredictions", { raceId: raceId }).then(function(res) {
+    const predictionsData = res.data || res.predictions || []; 
+    
+    if (typeof renderConsensusChart === "function") {
+      renderConsensusChart(predictionsData, res.locked);
+    }
+
+    if (!res.locked) { 
+      box.innerHTML = 
+        '<div class="locked-ticket-card">' +
+          '<div class="rubber-stamp-locked"><i class="fa-solid fa-lock me-2"></i>LOCKED</div>' +
+          '<div class="text-white fw-bold mb-1" style="font-family:\'Rajdhani\',sans-serif; font-size:1.05rem; letter-spacing:0.5px;">PADDOCK PARC FERMÉ</div>' +
+          '<div class="small text-secondary">' + (res.msg || 'ข้อมูลถูกซ่อนไว้จนกว่าจะหมดเวลา') + '</div>' +
+        '</div>'; 
+      return; 
+    } 
+
+    box.innerHTML = ''; 
+    if (predictionsData.length === 0) {
+      box.innerHTML = '<div class="text-center text-secondary small py-4">ยังไม่มีผู้ทายผลในสนามนี้</div>';
+      return;
+    }
+
+    predictionsData.forEach(function(p, index) {
+      const p1 = p.p1 || p.pos1 || '-';
+      const p2 = p.p2 || p.pos2 || '-';
+      const p3 = p.p3 || p.pos3 || '-';
+      const p4 = p.p4 || p.pos4 || '-';
+      const fl = p.fl || p.posFL || '';
+
+      const c1 = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[p1]) ? DRIVER_INFO[p1].color : '#64748b';
+      const c2 = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[p2]) ? DRIVER_INFO[p2].color : '#64748b';
+      const c3 = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[p3]) ? DRIVER_INFO[p3].color : '#64748b';
+      const c4 = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[p4]) ? DRIVER_INFO[p4].color : '#64748b';
+
+      let stubContent = '';
+      if (isCalculated || Number(p.score) > 0) {
+        stubContent = 
+          '<div class="ticket-pts-val text-warning">' + (p.score || 0) + '</div>' +
+          '<div class="ticket-pts-lbl">POINTS</div>';
+      } else {
+        stubContent = 
+          '<div class="ticket-pending-stamp">LOCKED IN</div>' +
+          '<div class="ticket-pts-lbl mt-1">WAITING</div>';
+      }
+
+      const passNum = String(index + 1).padStart(2, '0');
+      const playerName = p.playerName || p.player || 'Unknown';
+
+      const cardHtml = `
+        <div class="pred-ticket">
+           <div class="ticket-main">
+             <div class="ticket-player-header">
+               <div class="ticket-player-name"><i class="fa-solid fa-id-badge text-danger me-2"></i>${playerName}</div>
+               <span class="ticket-pass-tag">PASS #${passNum}</span>
+             </div>
+             <div class="ticket-picks-grid">
+               <div class="ticket-pick-item"><span class="ticket-pos-pill p1">P1</span><span class="ticket-driver-dot" style="background:${c1}"></span><span class="ticket-driver-txt">${getShortDriverName(p1)}</span></div>
+               <div class="ticket-pick-item"><span class="ticket-pos-pill p2">P2</span><span class="ticket-driver-dot" style="background:${c2}"></span><span class="ticket-driver-txt">${getShortDriverName(p2)}</span></div>
+               <div class="ticket-pick-item"><span class="ticket-pos-pill p3">P3</span><span class="ticket-driver-dot" style="background:${c3}"></span><span class="ticket-driver-txt">${getShortDriverName(p3)}</span></div>
+               <div class="ticket-pick-item"><span class="ticket-pos-pill">P4</span><span class="ticket-driver-dot" style="background:${c4}"></span><span class="ticket-driver-txt">${getShortDriverName(p4)}</span></div>
+             </div>
+             ${fl ? `<div class="ticket-fl-bar"><i class="fa-solid fa-bolt"></i><span>FL: ${getShortDriverName(fl)}</span></div>` : ''}
+           </div>
+           <div class="ticket-stub">
+             ${stubContent}
+           </div>
+         </div>
+      `;
+      box.insertAdjacentHTML('beforeend', cardHtml);
+    });
+    
+  }).catch(function(err) {
+      console.error("Community Error:", err);
+      box.innerHTML = '<div class="text-center text-danger small py-4">เกิดข้อผิดพลาดในการโหลดข้อมูล<br><span style="font-size:0.7rem; color:#888;">(กรุณารีเฟรช)</span></div>';
+  });
+}
+
+// =========================================================
+// 📰 LATEST PADDOCK NEWS (ระบบดึงข่าวอัตโนมัติจาก RSS)
+// =========================================================
+async function loadLatestNews() {
+  const container = document.getElementById('newsScrollContainer');
+  if (!container) return;
+
+  try {
+    const rssUrl = 'https://www.motorsport.com/rss/f1/news/';
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&api_key=`;
+    
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+
+    if (data.status !== 'ok' || !data.items || data.items.length === 0) {
+      container.innerHTML = '<div class="text-secondary small py-5 text-center w-100">ไม่สามารถเชื่อมต่อศูนย์ข่าวได้</div>';
+      return;
+    }
+
+    const latestNews = data.items.slice(0, 6);
+    let newsHtml = '';
+    
+    latestNews.forEach(item => {
+      let imgUrl = 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj';
+      if (item.enclosure && item.enclosure.link) {
+        imgUrl = item.enclosure.link;
+      } else if (item.thumbnail) {
+        imgUrl = item.thumbnail;
+      }
+
+      const pubDate = new Date(item.pubDate.replace(' ', 'T'));
+      const diffHrs = Math.floor((new Date() - pubDate) / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffHrs / 24);
+      let timeText = diffHrs < 1 ? 'Just now' : (diffHrs < 24 ? `${diffHrs} hrs ago` : `${diffDays} days ago`);
+
+      newsHtml += `
+        <a href="${item.link}" class="news-card-cinematic" target="_blank">
+          <img src="${imgUrl}" class="news-bg-img" alt="News Image" onerror="this.src='https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj'">
+          <div class="news-gradient-overlay"></div>
+          <div class="news-content-overlay">
+            <div style="color: #0dcaf0; font-size: 0.75rem; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);">
+              ${timeText} • Motorsport.com
+            </div>
+            <div class="news-headline-overlay">${item.title}</div>
+          </div>
+        </a>
+      `;
+    });
+
+    container.innerHTML = newsHtml;
+
+  } catch (error) {
+    console.error("News Fetch Error:", error);
+    container.innerHTML = '<div class="text-danger small py-5 text-center w-100">เกิดข้อผิดพลาดในการโหลดข่าวสาร</div>';
+  }
+}
+
+// =========================================================
+// 🎯 DRIVER FORM RADAR & PREDICTION HERO FLOW
+// =========================================================
+let heroRadarChartInstance = null;
+
+let DRIVER_STATS = {
+  "default": [80, 80, 80, 80, 80, 80]
+};
+
+const GAS_STATS_API_URL = "https://script.google.com/macros/s/AKfycbwZ_VB9I7ClOgDpd8bDkaY09CzipETJMeQPDK6Qk6JYVNPdgfXA6ZrmXDG8gYsJ9I6u/exec?action=getStats";
+
+async function loadDriverStatsAPI() {
+  try {
+    const response = await fetch(GAS_STATS_API_URL);
+    const result = await response.json();
+    
+    if (result.status === "success" && result.data) {
+      DRIVER_STATS = { ...DRIVER_STATS, ...result.data };
+      console.log("✅ Driver Stats Loaded via API");
+    }
+  } catch (error) {
+    console.error("❌ Failed to fetch driver stats:", error);
+  }
+}
+
+function renderDriverRadar(fullName, teamColor) {
+  const canvasEl = document.getElementById('driverRadarChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  
+  if (heroRadarChartInstance) heroRadarChartInstance.destroy();
+
+  const statsData = DRIVER_STATS[fullName] || DRIVER_STATS["default"];
+  const colorCode = teamColor || "#0dcaf0";
+
+  heroRadarChartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Quali', 'Racecraft', 'Tyre Mgmt', 'Consistency', 'Wet', 'Form'],
+      datasets: [{
+        label: fullName,
+        data: statsData,
+        backgroundColor: colorCode + '40', 
+        borderColor: colorCode,
+        pointBackgroundColor: '#000',
+        pointBorderColor: colorCode,
+        pointHoverBackgroundColor: colorCode,
+        pointHoverBorderColor: '#fff',
+        borderWidth: 2,
+        pointRadius: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+          pointLabels: { color: '#94a3b8', font: { family: 'Rajdhani', size: 11, weight: 'bold' } },
+          ticks: { display: false, min: 50, max: 100 } 
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10, 12, 16, 0.95)',
+          titleColor: '#fff',
+          bodyColor: colorCode,
+          titleFont: { family: 'Rajdhani', size: 14, weight: 'bold' },
+          bodyFont: { family: 'Rajdhani', size: 13, weight: 'bold' },
+          borderColor: colorCode,
+          borderWidth: 1,
+          displayColors: false,
+          callbacks: {
+            label: function(context) { return context.raw + ' / 100'; }
+          }
+        }
+      }
+    }
+  });
+}
+
+function previewDriverBeforeSelect(fullName) {
+  triggerHaptic();
+  
+  // 🎯 ซ่อนปุ่ม Radio ไว้ตลอดระหว่างดูกราฟนักแข่ง
+  const radioBtn = document.getElementById('btnTeamRadio');
+  if (radioBtn) {
+    radioBtn.style.setProperty('display', 'none', 'important');
+  }
+
+  const gridModalEl = document.getElementById('driverSelectorModal');
+  const info = DRIVER_INFO[fullName];
+  if (!info) return;
+
+  let currentPts = "0";
+  let currentPos = "-";
+  
+  const standingRows = document.querySelectorAll('#driverStandingsList .f1-standings-row');
+  standingRows.forEach(row => {
+    const onclickAttr = row.getAttribute('onclick') || '';
+    const lastName = fullName.split(' ').slice(1).join(' ');
+    
+    if (onclickAttr.includes(fullName) || (lastName && row.innerText.includes(lastName))) {
+      const ptsEl = row.querySelector('.col-pts');
+      const posEl = row.querySelector('.col-pos');
+      if (ptsEl) currentPts = ptsEl.innerText.trim();
+      if (posEl) currentPos = posEl.innerText.trim();
+    }
+  });
+
+  const parts = fullName.split(' ');
+  document.getElementById('heroDriverFirstName').innerText = parts[0];
+  document.getElementById('heroDriverLastName').innerText = parts.slice(1).join(' ');
+  document.getElementById('heroTeamName').innerText = info.team;
+  document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
+  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
+  document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
+
+  const heroPtsEl = document.getElementById('heroPoints');
+  if (heroPtsEl) heroPtsEl.innerText = "0"; 
+  const heroPosEl = document.getElementById('heroPos');
+  if (heroPosEl) heroPosEl.innerText = 'P' + currentPos;
+
+  const standardStatsEl = document.getElementById('heroStandardStats');
+  const predictSectionEl = document.getElementById('heroPredictSection');
+  
+  if (standardStatsEl) {
+    standardStatsEl.style.display = 'flex';
+    standardStatsEl.style.marginTop = "35px"; 
+    standardStatsEl.style.flexDirection = "column";
+    standardStatsEl.style.alignItems = "flex-start";
+    standardStatsEl.style.gap = "15px";
+    
+    if (heroPtsEl && heroPtsEl.parentElement) {
+      heroPtsEl.parentElement.style.fontSize = "4.5rem";
+      heroPtsEl.parentElement.style.lineHeight = "0.9";
+      heroPtsEl.parentElement.style.textAlign = "left";
+    }
+    if (heroPosEl) {
+      heroPosEl.style.fontSize = "4.5rem";
+      heroPosEl.style.lineHeight = "0.9";
+      heroPosEl.style.textAlign = "left";
+    }
+  }
+  
+  if (predictSectionEl) predictSectionEl.style.display = 'block';
+
+  renderDriverRadar(fullName, info.color);
+
+  const btn = document.getElementById('btnConfirmHeroPick');
+  const slotLabels = { 'pos1': 'P1', 'pos2': 'P2', 'pos3': 'P3', 'pos4': 'P4', 'posFL': 'FASTEST LAP' };
+  
+  if (btn && currentSelectingSlot) {
+    document.getElementById('lblHeroSlot').innerText = slotLabels[currentSelectingSlot] || '';
+    btn.onclick = function() {
+      const heroModalEl = document.getElementById('driverHeroModal');
+      const heroInst = bootstrap.Modal.getInstance(heroModalEl) || window.driverHeroModalInstance;
+      
+      if (heroModalEl && heroInst) {
+        heroModalEl.addEventListener('hidden.bs.modal', function onHeroHidden() {
+          confirmSelectDriver(fullName);
+        }, { once: true });
+        heroInst.hide();
+      } else {
+        confirmSelectDriver(fullName);
+      }
+    };
+  }
+
+  const showHeroAndAnimate = function() {
+    const heroModalEl = document.getElementById('driverHeroModal');
+    if (!window.driverHeroModalInstance) {
+      window.driverHeroModalInstance = new bootstrap.Modal(heroModalEl);
+    }
+    window.driverHeroModalInstance.show();
+
+    setTimeout(() => {
+      if (typeof animateCountUp === 'function' && heroPtsEl) {
+        animateCountUp(heroPtsEl, currentPts, 1800);
+      } else if (heroPtsEl) {
+        heroPtsEl.innerText = currentPts;
+      }
+    }, 150);
+  };
+
+  const gridInst = driverSelectorModalInstance || bootstrap.Modal.getInstance(gridModalEl);
+  if (gridModalEl && gridModalEl.classList.contains('show') && gridInst) {
+    gridModalEl.addEventListener('hidden.bs.modal', function onGridHidden() {
+      showHeroAndAnimate();
+    }, { once: true });
+    gridInst.hide();
+  } else {
+    showHeroAndAnimate();
+  }
+}
+
+const originalOpenDriverHero = openDriverHero;
+openDriverHero = function(fullName, rowEl) {
+  triggerHaptic();
+  const info = DRIVER_INFO[fullName];
+  if(!info) return;
+
+  const pts = rowEl.querySelector('.col-pts').innerText;
+  const pos = rowEl.querySelector('.col-pos').innerText;
+  const parts = fullName.split(' ');
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ');
+
+  document.getElementById('heroDriverFirstName').innerText = firstName;
+  document.getElementById('heroDriverLastName').innerText = lastName;
+  document.getElementById('heroTeamName').innerText = info.team;
+  document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
+  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
+  
+  const heroPtsEl = document.getElementById('heroPoints');
+  const heroPosEl = document.getElementById('heroPos');
+  if (heroPosEl) heroPosEl.innerText = 'P' + pos;
+
+  const standardStatsEl = document.getElementById('heroStandardStats');
+  const predictSectionEl = document.getElementById('heroPredictSection');
+  
+  if (standardStatsEl) {
+    standardStatsEl.style.display = 'block';
+    standardStatsEl.style.marginTop = "0px";
+    
+    if (heroPtsEl && heroPtsEl.parentElement) {
+      heroPtsEl.parentElement.style.fontSize = ""; 
+    }
+    if (heroPosEl) {
+      heroPosEl.style.fontSize = ""; 
+    }
+  }
+  
+  if (predictSectionEl) predictSectionEl.style.display = 'none';
+
+  if (heroPtsEl) heroPtsEl.innerText = "0"; 
+  
+  setTimeout(() => {
+    animateCountUp(heroPtsEl, pts, 2200); 
+  }, 10); 
+
+  document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
+
+  if (!window.driverHeroModalInstance) {
+    window.driverHeroModalInstance = new bootstrap.Modal(document.getElementById('driverHeroModal'));
+  }
+  window.driverHeroModalInstance.show();
+};
+
+// ==========================================
+// 🔴 PIT WALL RADIO LOGIC (FRONT-END TELEMETRY)
+// ==========================================
+
+// เปิด/ปิด หน้าต่างวิทยุ
+function togglePitWall() {
+  const modal = document.getElementById('pitWallModal');
+  if (modal) modal.classList.toggle('hidden');
+}
+
+// กดปุ่ม Enter เพื่อส่ง
+function handleChatEnter(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    sendRadioMessage();
+  }
+}
+
+// ฟังก์ชันไฮไลท์คำสำคัญ (P1, P2, Fastest Lap) ให้เป็นสี Cyan แนวนักซิ่ง
+function formatTelemetryText(text) {
+  return text.replace(/\b(P[1-5]|Fastest Lap|Undercut|Safety Car)\b/gi, '<span class="telemetry-cyan">$&</span>');
+}
+
+// ส่งข้อความไปหา AI
+function sendRadioMessage() {
+  const inputEl = document.getElementById('chatInput');
+  const message = inputEl.value.trim();
+  if (!message) return;
+
+  const chatBox = document.getElementById('chatBox');
+
+  // 1. เพิ่มข้อความของผู้เล่น (User) ฝั่งขวา
+  chatBox.innerHTML += `
+    <div class="msg-wrapper user">
+      <div class="msg-bubble">${message}</div>
+    </div>
+  `;
+  inputEl.value = "";
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // 2. ขึ้นแอนิเมชันคลื่นวิทยุ (รอ AI คิด) ฝั่งซ้าย
+  const waveId = 'wave-' + Date.now();
+  chatBox.innerHTML += `
+    <div class="msg-wrapper ai" id="${waveId}">
+      <div class="msg-bubble">
+        <div class="radio-wave">
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+          <div class="wave-bar"></div><div class="wave-bar"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // 3. เตรียมข้อมูลผู้เล่นและสนามจริง ส่งไป Backend
+  const player = localStorage.getItem('f1_player_name') || 'Driver';
+  const rSel = document.getElementById('selRace');
+  let currentRace = "สนามถัดไป";
+  if (rSel && rSel.selectedIndex > 0) {
+    currentRace = rSel.options[rSel.selectedIndex].text.replace(/🟢|🔴|🏁|⚡/g, '').trim();
+  }
+
+  const clientData = {
+    playerName: player,
+    raceName: currentRace,
+    message: message,
+    chatHistory: [] 
+  };
+
+  // 4. เรียกใช้ฟังก์ชัน callGAS สำหรับ GitHub Pages
+  callGAS("askRaceEngineer", clientData)
+    .then(function(response) {
+      // ลบคลื่นวิทยุออก
+      const waveEl = document.getElementById(waveId);
+      if (waveEl) waveEl.remove();
+      
+      // ใส่ข้อความที่ตอบกลับมา
+      let finalMsg = response.message || response.msg || "ไม่มีการตอบกลับ";
+      const formattedText = formatTelemetryText(finalMsg);
+      
+      chatBox.innerHTML += `
+        <div class="msg-wrapper ai">
+          <div class="msg-bubble">${formattedText}</div>
+        </div>
+      `;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(function(error) {
+      const waveEl = document.getElementById(waveId);
+      if (waveEl) waveEl.remove();
+      
+      chatBox.innerHTML += `
+        <div class="msg-wrapper ai">
+          <div class="msg-bubble" style="border-left-color: #ff9800;">⚠️ สัญญาณขาดหาย: ${error.toString()}</div>
+        </div>
+      `;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+}
+// ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
+function closeTeamRadio() {
+  const modal = document.getElementById('pitWallModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    modal.classList.add('hidden');
+  }
 }
