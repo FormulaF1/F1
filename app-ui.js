@@ -1693,7 +1693,6 @@ function renderConsensusChart(predictionsData, isParcFermeClosed) {
 
   const p1Labels = Object.keys(p1Counts);
   const p1Data = Object.values(p1Counts);
-  // ดึงสีประจำทีมจาก DRIVER_INFO โดยตรง ครบทั้ง 22 คน
   const p1Colors = p1Labels.map(name => (DRIVER_INFO[name] && DRIVER_INFO[name].color) ? DRIVER_INFO[name].color : '#888888');
 
   const canvasEl = document.getElementById('p1PredictionChart');
@@ -1774,68 +1773,6 @@ function renderConsensusChart(predictionsData, isParcFermeClosed) {
     if (flBarEl) flBarEl.style.width = `${flPercent}%`;
   }
 }
-
-  const canvasEl = document.getElementById('p1PredictionChart');
-  if (!canvasEl) return;
-  const ctx = canvasEl.getContext('2d');
-  
-  if (communityChartInstance) {
-    communityChartInstance.destroy();
-  }
-
-  communityChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: p1Labels,
-      datasets: [{
-        data: p1Data,
-        backgroundColor: p1Colors,
-        borderWidth: 0,
-        hoverOffset: 4
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '75%', 
-      plugins: {
-        legend: {
-          position: 'right', 
-          labels: { 
-            color: '#ffffff', 
-            font: { family: 'Kanit', size: 10 },
-            boxWidth: 10,
-            padding: 15,
-            generateLabels: function(chart) {
-              const data = chart.data;
-              if (data.labels.length && data.datasets.length) {
-                const dataset = data.datasets[0];
-                const total = dataset.data.reduce((acc, val) => acc + val, 0);
-                
-                return data.labels.map(function(label, i) {
-                  const value = dataset.data[i];
-                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                  const color = dataset.backgroundColor[i];
-                  
-                  return {
-                    text: `${label} (${percentage}% - ${value}/${total})`,
-                    fillStyle: color,
-                    strokeStyle: color,
-                    fontColor: '#ffffff',
-                    lineWidth: 0,
-                    hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i].hidden,
-                    index: i
-                  };
-                });
-              }
-              return [];
-            }
-          }
-        }
-      }
-    }
-  });
-
 function getShortDriverName(fullName) {
   if (!fullName || fullName === '-') return '-';
   const parts = fullName.trim().split(' ');
