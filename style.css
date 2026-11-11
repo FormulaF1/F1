@@ -3275,9 +3275,9 @@ body {
   max-width: 480px !important;
   
   /* ปรับความใสได้ตรงเลขตัวสุดท้าย (ยิ่งใกล้ยิ่ง 0 ยิ่งใส) */
-  background: rgba(50, 55, 65, 0.15) !important; 
-  backdrop-filter: blur(25px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(25px) saturate(150%) !important;
+  background: rgba(50, 55, 65, 0.03) !important; 
+  backdrop-filter: blur(5px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(7px) saturate(130%) !important;
   
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 50px !important; /* ⬅️ ทรงแคปซูล */
@@ -3340,4 +3340,580 @@ body {
 .f1-nav-link::after,
 .f1-nav-link::before {
   display: none !important;
+}
+/* 1. ปรับแต่งกล่องเลือกสนามให้พรีเมียมขึ้น */
+#selResultsRace {
+  background: linear-gradient(135deg, rgba(26, 29, 38, 0.9) 0%, rgba(13, 14, 18, 0.95) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 12px !important;
+  color: #fff !important;
+  padding: 12px 16px !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+  transition: all 0.3s ease;
+}
+
+#selResultsRace:focus {
+  border-color: var(--f1-red, #e10600) !important;
+  box-shadow: 0 0 15px rgba(225, 6, 0, 0.3) !important;
+}
+
+/* 2. ปรับแต่งกลุ่มปุ่มเซสชันให้เป็นสไตล์ F1 Broadcast Pill */
+#resultsSessionBtnGroup {
+  background: rgba(10, 12, 16, 0.6);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 6px !important;
+}
+
+#resultsSessionBtnGroup .btn {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-family: 'Rajdhani', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.8px !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  transition: all 0.25s ease;
+}
+
+#resultsSessionBtnGroup .btn:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* สถานะเมื่อปุ่มถูกเลือก (Active) - เปลี่ยนเป็นแดง F1 เรืองแสง */
+#resultsSessionBtnGroup .btn.active {
+  background: linear-gradient(135deg, #e10600, #b90500) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px rgba(225, 6, 0, 0.4) !important;
+}
+/* =========================================
+   TELEMETRY HUD - HORIZONTAL LAP FLOW
+   ========================================= */
+.f1-telemetry-hud {
+  background: rgba(15, 17, 24, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.lap-flow-style {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+/* สร้างเส้นประจำลองลู่วิ่ง (Track Line) พาดผ่านกลาง */
+.lap-flow-style::before {
+  content: '';
+  position: absolute;
+  top: 66%; /* เปลี่ยนจาก 62% เป็น 66% เพื่อขยับเส้นลงมาให้อยู่ระหว่างกลางพอดี */
+  left: 8%;
+  right: 8%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 15%, rgba(255, 255, 255, 0.2) 85%, transparent 100%);
+  z-index: 1;
+}
+
+.lap-flow-style .sector-box {
+  flex: 1;
+  text-align: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.lap-flow-style .sector-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 700;
+  margin-bottom: 15px;
+  letter-spacing: 1px;
+}
+
+/* จัดเรียงป้ายชื่อนักแข่งให้อยู่ห่างจากเวลา เพื่อเว้นที่ให้เส้นลอดผ่าน */
+.lap-flow-style .sector-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px; 
+}
+
+/* ปรับป้ายนักแข่งเป็นกล่องมน พื้นดำทึบ มีแถบสีทีมด้านซ้าย (ขนาดย่อส่วนลง) */
+.lap-flow-style .driver-tag {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 800;
+  color: #ffffff;
+  background: #181a24;
+  padding: 2px 8px; /* ลดระยะขอบด้านในให้กล่องเล็กลง */
+  border: none;
+  border-left: 3px solid var(--team-color); /* ลดความหนาเส้นสีทีม */
+  border-radius: 4px;
+  font-size: 0.85rem; /* ลดขนาดตัวอักษรลง */
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+  margin-bottom: 2px; /* ดันกล่องขึ้นไม่ให้ชิดเส้นเกินไป */
+}
+
+/* ตัวเลขเวลาแบบ Solid คมชัด ไม่ฟุ้งเบลอ */
+.lap-flow-style .sector-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #475569;
+  background: #11131a; /* บังเส้นแนวนอนด้านหลังให้ดูเนียนตา */
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+.lap-flow-style .sector-time.text-purple {
+  color: #b700ff; /* สีม่วงทึบ ตัดแสงนีออนทิ้ง */
+  text-shadow: none;
+}
+
+/* ดีไซน์กล่อง Speed Trap ใหม่ให้ดูกลืนกับพื้นหลัง */
+.f1-telemetry-hud .speed-trap-box {
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: none;
+  border-left: none;
+  border-right: none;
+  box-shadow: none;
+}
+
+.f1-telemetry-hud .speed-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.f1-telemetry-hud .speed-data .driver-tag {
+  border-bottom: none;
+  border-left: 3px solid var(--team-color);
+  padding: 0 0 0 8px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 1rem;
+}
+
+.f1-telemetry-hud .speed-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-shadow: none;
+}
+
+.f1-telemetry-hud .speed-val .unit {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-family: 'Rajdhani', sans-serif;
+}
+/* --- CONSENSUS TELEMETRY UI --- */
+.parc-ferme-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(13, 14, 18, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  z-index: 10;
+}
+.parc-ferme-overlay .lock-icon {
+  font-size: 2rem;
+  color: #e10600;
+  text-shadow: 0 0 15px rgba(225, 6, 0, 0.6);
+}
+.parc-ferme-overlay .lock-title {
+  font-family: 'Share Tech Mono', monospace;
+  color: #fff;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+}
+.parc-ferme-overlay .lock-desc {
+  color: #aaa;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+/* 🎯 ถอดกรอบและพื้นหลังของกล่อง Consensus Telemetry ออกให้โปร่งใส */
+.consensus-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin-bottom: 20px;
+}
+/* =========================================================
+   LATEST PADDOCK NEWS (CINEMATIC FULL-CARD DESIGN - LARGE)
+   ========================================================= */
+.news-scroll-container {
+  display: flex;
+  gap: 16px; /* ขยายช่องว่างระหว่างการ์ดเล็กน้อย */
+  overflow-x: auto;
+  padding-bottom: 15px; 
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.news-scroll-container::-webkit-scrollbar {
+  display: none; 
+}
+
+.news-card-cinematic {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; 
+  flex: 0 0 88%; /* 🎯 ปรับความกว้างเป็น 88% ของหน้าจอ (เกือบเต็มจอ) */
+  max-width: 380px; /* จำกัดขนาดสูงสุดไม่ให้ใหญ่เกินไปบนจอคอมพิวเตอร์ */
+  height: 340px; /* 🎯 เพิ่มความสูงของการ์ดให้ดูใหญ่อลังการเหมือนแอปหลัก */
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  scroll-snap-align: start; /* ล็อกการ์ดให้ชิดซ้ายพอดีเวลาปัด */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.news-card-cinematic:hover, .news-card-cinematic:active {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* รูปภาพพื้นหลังเต็มการ์ด */
+.news-bg-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  z-index: 1;
+  transition: transform 0.4s ease;
+}
+.news-card-cinematic:hover .news-bg-img,
+.news-card-cinematic:active .news-bg-img {
+  transform: scale(1.05); 
+}
+
+/* เลเยอร์ไล่สีดำจางๆ (Gradient Fade) */
+.news-gradient-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70%; /* ไล่เฉดสีดำครอบคลุมพื้นที่ด้านล่าง */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.6) 45%, transparent 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* กล่องครอบตัวอักษรพาดหัวข่าว */
+.news-content-overlay {
+  position: relative;
+  z-index: 3;
+  padding: 20px 18px 18px 18px; /* ขยายระยะขอบข้อความให้สมดุลกับจอใหญ่ */
+}
+
+/* ตัวหนังสือพาดหัวข่าว */
+.news-headline-overlay {
+  font-family: 'Rajdhani', 'Kanit', sans-serif; 
+  font-size: 1.25rem; /* 🎯 ขยายขนาดตัวอักษรให้ใหญ่ขึ้นสัมพันธ์กับการ์ด */
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.9); 
+  
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  transition: color 0.2s ease;
+}
+
+.news-card-cinematic:hover .news-headline-overlay,
+.news-card-cinematic:active .news-headline-overlay {
+  color: #e2e8f0; 
+}
+/* ========================================== */
+/* 🔴 PIT WALL RADIO STYLES                   */
+/* ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* Overlay พื้นหลังดำโปร่งแสง */
+.pit-wall-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+.pit-wall-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* กล่องแชทหลัก (Glassmorphism) */
+.pit-wall-container {
+  width: 90%;
+  max-width: 450px;
+  height: 80vh;
+  max-height: 600px;
+  background: rgba(15, 18, 25, 0.85); /* Carbon Black */
+  border: 1px solid rgba(255, 40, 0, 0.2); /* Red tint border */
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 40, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Chakra Petch', sans-serif;
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.pit-wall-overlay.hidden .pit-wall-container {
+  transform: translateY(20px) scale(0.95);
+}
+
+/* ส่วนหัว Header */
+.pit-wall-header {
+  padding: 15px 20px;
+  background: linear-gradient(90deg, rgba(25, 25, 30, 0.9) 0%, rgba(40, 15, 15, 0.9) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.header-title {
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* จุดแดงกะพริบ (Pulse) */
+.pulse-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #ff2800; /* Racing Red */
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ff2800;
+  animation: pulse-red 1.5s infinite;
+}
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(255, 40, 0, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 40, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 40, 0, 0); }
+}
+.close-btn {
+  background: none; border: none; color: #888; font-size: 18px; cursor: pointer; transition: color 0.2s;
+}
+.close-btn:hover { color: #ff2800; }
+
+/* พื้นที่แชท */
+.pit-wall-chat {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.pit-wall-chat::-webkit-scrollbar { width: 6px; }
+.pit-wall-chat::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* ดีไซน์ข้อความ */
+.msg-wrapper {
+  display: flex;
+  width: 100%;
+  animation: slideUpFade 0.3s ease forwards;
+}
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.msg-bubble {
+  max-width: 85%;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ข้อความผู้เล่น (User) */
+.msg-wrapper.user { justify-content: flex-end; }
+.msg-wrapper.user .msg-bubble {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+  border-radius: 14px 14px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ข้อความ Race Engineer (AI) */
+.msg-wrapper.ai { justify-content: flex-start; }
+.msg-wrapper.ai .msg-bubble {
+  background: linear-gradient(135deg, rgba(255, 40, 0, 0.05) 0%, rgba(0, 0, 0, 0.2) 100%);
+  color: #fff;
+  border-left: 3px solid #ff2800; /* ขีดแดงสไตล์ Telemetry */
+  border-radius: 0 14px 14px 14px;
+  border-top: 1px solid rgba(255, 40, 0, 0.1);
+  border-right: 1px solid rgba(255, 40, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 40, 0, 0.1);
+}
+
+/* ไฮไลท์ข้อมูล Telemetry (ตัวเลข, P1-P4 จะถูกเปลี่ยนเป็นสีฟ้า Cyan) */
+.telemetry-cyan {
+  color: #00e5ff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-shadow: 0 0 5px rgba(0, 229, 255, 0.4);
+}
+
+/* แอนิเมชันตอน AI คิด (กราฟคลื่นวิทยุ) */
+.radio-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 15px;
+  padding: 5px 0;
+}
+.wave-bar {
+  width: 3px;
+  background-color: #ff2800;
+  border-radius: 2px;
+  animation: equalize 1s infinite alternate ease-in-out;
+}
+.wave-bar:nth-child(1) { animation-delay: 0.1s; height: 30%; }
+.wave-bar:nth-child(2) { animation-delay: 0.3s; height: 100%; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; height: 50%; }
+.wave-bar:nth-child(4) { animation-delay: 0.4s; height: 80%; }
+@keyframes equalize { 0% { height: 30%; } 100% { height: 100%; } }
+
+/* พื้นที่พิมพ์ข้อความ Input */
+.pit-wall-input-zone {
+  padding: 15px;
+  background: rgba(10, 12, 16, 0.9);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 10px;
+}
+#chatInput {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 15px;
+  color: #fff;
+  font-family: 'Chakra Petch', sans-serif;
+  transition: all 0.3s;
+}
+#chatInput:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 40, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 40, 0, 0.2);
+}
+.send-btn {
+  background: #ff2800;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 45px;
+  height: 45px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+}
+.send-btn:hover { background: #e02000; transform: scale(1.05); }
+.send-btn:active { transform: scale(0.95); }
+/* ========================================== */
+/* 📻 FLOATING TEAM RADIO BUTTON STYLES       */
+/* ========================================== */
+.team-radio-fab {
+  position: fixed;
+  bottom: 100px; /* ลอยอยู่เหนือแถบเมนูด้านล่าง */
+  right: 20px;  /* จัดให้อยู่มุมขวาล่าง */
+  width: 40px;
+  height: 40px;
+  background-color: #ff2800; /* สีแดง Racing Red */
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(255, 40, 0, 0.4);
+  cursor: pointer;
+  z-index: 9990;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.team-radio-fab:hover {
+  background-color: #d11d00;
+  transform: scale(1.08);
+}
+
+.team-radio-fab:active {
+  transform: scale(0.95);
+}
+
+/* เอฟเฟกต์วงคลื่นสีแดงด้านหลังปุ่ม (Pulse) */
+.team-radio-fab .radio-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #ff2800;
+  border-radius: 50%;
+  z-index: -1;
+  animation: fab-pulse 2s infinite;
+}
+
+@keyframes fab-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+/* 🏎️ เพิ่มพื้นที่ว่างด้านล่างสุดของหน้าจอ เพื่อไม่ให้เนื้อหาถูกแถบเมนูปิดทับ */
+body {
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 20px)) !important;
+}
+.tab-pane-custom {
+  padding-bottom: 10px !important;
+}
+
+/* 📌 ปรับให้ปุ่ม SUBMIT PREDICTION มีพื้นที่หายใจและไม่ชิดติดแถบเมนูป้านเกินไป */
+#btnPred {
+  margin-bottom: 15px !important;
 }
