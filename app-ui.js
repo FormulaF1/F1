@@ -2299,6 +2299,13 @@ function sendRadioMessage() {
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
+// ฟังก์ชันส่งข้อความด่วน (Quick Prompt) เข้า Pit Wall Radio
+function sendQuickRadioPrompt(promptText) {
+  const inputEl = document.getElementById('chatInput');
+  if (!inputEl) return;
+  inputEl.value = promptText;
+  sendRadioMessage(); // สั่งให้ส่งข้อความเข้าแชททันที
+}
 
 // ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
 function closeTeamRadio() {
