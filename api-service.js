@@ -372,7 +372,11 @@ async function loadResultsSessionData(sessionKey, btnEl) {
 function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   triggerHaptic();
   const info = DRIVER_INFO[fullName];
-  if(!info) return;
+  if (!info) return;
+
+  // ซ่อนปุ่มวิทยุขณะเปิด Hero Modal
+  const radioBtn = document.getElementById('btnTeamRadio');
+  if (radioBtn) radioBtn.style.setProperty('display', 'none', 'important');
 
   const parts = fullName.split(' ');
   const firstName = parts[0];
@@ -383,13 +387,25 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   document.getElementById('heroTeamName').innerText = info.team;
   document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
   document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
-  document.getElementById('heroPos').innerText = championshipPos;
-
-  const ptsEl = document.getElementById('heroPoints');
-  ptsEl.innerText = "0"; 
   
+  const heroPtsEl = document.getElementById('heroPoints');
+  const heroPosEl = document.getElementById('heroPos');
+  if (heroPosEl) heroPosEl.innerText = championshipPos;
+
+  // รีเซ็ต Layout ให้กลับเป็นโหมดดูสถิติมาตรฐาน และซ่อนโซนทายผล
+  const standardStatsEl = document.getElementById('heroStandardStats');
+  const predictSectionEl = document.getElementById('heroPredictSection');
+  if (standardStatsEl) {
+    standardStatsEl.style.display = 'block';
+    standardStatsEl.style.marginTop = "0px";
+    if (heroPtsEl && heroPtsEl.parentElement) heroPtsEl.parentElement.style.fontSize = "";
+    if (heroPosEl) heroPosEl.style.fontSize = "";
+  }
+  if (predictSectionEl) predictSectionEl.style.display = 'none';
+
+  if (heroPtsEl) heroPtsEl.innerText = "0"; 
   setTimeout(() => {
-    animateCountUp(ptsEl, points, 2200); 
+    animateCountUp(heroPtsEl, points, 2200); 
   }, 10); 
 
   document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
