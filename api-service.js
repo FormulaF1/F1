@@ -410,11 +410,23 @@ async function loadTelemetryHUD(sessionKey = 'latest') {
     const driverMap = {};
     
     drivers.forEach(d => {
-      // จับคู่สีทีมจาก DRIVER_INFO ที่มีอยู่แล้วในระบบ
-      const info = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[d.full_name]) ? DRIVER_INFO[d.full_name] : { color: '#888888' };
+      let driverColor = '#888888'; // สีเทาเริ่มต้น
+      
+      if (typeof DRIVER_INFO !== 'undefined') {
+        const lastNameAPI = (d.last_name || '').toLowerCase();
+        
+        for (const [fullName, info] of Object.entries(DRIVER_INFO)) {
+          // 🎯 แก้ปัญหา: ค้นหาด้วยนามสกุลแบบไม่สนตัวพิมพ์เล็ก-ใหญ่
+          if (fullName.toLowerCase().includes(lastNameAPI)) {
+            driverColor = info.color;
+            break;
+          }
+        }
+      }
+      
       driverMap[d.driver_number] = {
-        name: d.name_acronym || d.last_name.substring(0, 3).toUpperCase(), // เช่น VER, NOR
-        color: info.color
+        name: d.name_acronym || (d.last_name ? d.last_name.substring(0, 3).toUpperCase() : '---'),
+        color: driverColor
       };
     });
 
