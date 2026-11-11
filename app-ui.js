@@ -2306,11 +2306,3 @@ function sendQuickRadioPrompt(promptText) {
   inputEl.value = promptText;
   sendRadioMessage(); // สั่งให้ส่งข้อความเข้าแชททันที
 }
-
-// ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
-function closeTeamRadio() {
-  const modal = document.getElementById('pitWallModal');
-  if (modal && !modal.classList.contains('hidden')) {
-    modal.classList.add('hidden');
-  }
-}
