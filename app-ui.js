@@ -2187,7 +2187,13 @@ function togglePitWall() {
   const modal = document.getElementById('pitWallModal');
   if (modal) modal.classList.toggle('hidden');
 }
-
+// ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
+function closeTeamRadio() {
+  const modal = document.getElementById('pitWallModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    modal.classList.add('hidden');
+  }
+}
 // กดปุ่ม Enter เพื่อส่ง
 function handleChatEnter(event) {
   if (event.key === 'Enter') {
