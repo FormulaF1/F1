@@ -903,6 +903,13 @@
         </div>
       </div>
 
+     <!-- Quick Prompts สำหรับถาม AI Race Engineer ได้ในคลิกเดียว -->
+      <div class="pit-wall-quick-chips">
+        <button type="button" class="radio-chip-btn" onclick="sendQuickRadioPrompt('📊 ขอโพยฟันธง P1-P4 และ Fastest Lap สนามนี้')">📊 ขอโพย P1-P4 + FL</button>
+        <button type="button" class="radio-chip-btn" onclick="sendQuickRadioPrompt('⚡ ใครเป็นตัวเต็งคว้า Fastest Lap ในเรซนี้')">⚡ เต็ง Fastest Lap</button>
+        <button type="button" class="radio-chip-btn" onclick="sendQuickRadioPrompt('🌧️ โอกาสเกิด Safety Car และสภาพอากาศเป็นอย่างไร')">🌧️ Safety Car & อากาศ</button>
+      </div>
+      
       <!-- Input Area -->
       <div class="pit-wall-input-zone">
         <input type="text" id="chatInput" placeholder="Transmission to Pit Wall..." onkeypress="handleChatEnter(event)" autocomplete="off">
