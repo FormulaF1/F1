@@ -403,82 +403,77 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
 // ฟังก์ชันสำหรับหน้า TELEMETRY (ดึงเวลา Fastest Sector และ Speed Trap)
 // =========================================================
 async function loadTelemetryHUD(sessionKey = 'latest') {
-  const loadingHtml = '<i class="fa-solid fa-spinner fa-spin text-secondary"></i>';
-  const noDataHtml = '<span style="font-size:0.8rem; color:#666;">NO DATA</span>';
-  
-  ['fastestSec1', 'fastestSec2', 'fastestSec3'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = `<div class="driver-tag">---</div><div class="sector-time text-secondary">${loadingHtml}</div>`;
-  });
-  const spdEl = document.getElementById('highestSpeed');
-  if (spdEl) spdEl.innerHTML = `<div class="driver-tag me-3">---</div><div class="speed-val">${loadingHtml}</div>`;
-
   try {
-    // ดึงผ่าน Cache ของเรา ลดปัญหาการหน่วงของ API
-    const [laps, drivers] = await Promise.all([
-      fetchOpenF1Cached(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`),
-      fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`)
-    ]);
+    // 1. ดึงข้อมูลนักแข่งมาเพื่อทำ Mapping (เปลี่ยน driver_number เป็นชื่อ)
+    const driverRes = await fetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`);
+    const drivers = await driverRes.json();
+    const driverMap = {};
+    
+    drivers.forEach(d => {
+      // จับคู่สีทีมจาก DRIVER_INFO ที่มีอยู่แล้วในระบบ
+      const info = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[d.full_name]) ? DRIVER_INFO[d.full_name] : { color: '#888888' };
+      driverMap[d.driver_number] = {
+        name: d.name_acronym || d.last_name.substring(0, 3).toUpperCase(), // เช่น VER, NOR
+        color: info.color
+      };
+    });
 
-    let best = {
-      sec1: { time: Infinity, driverNum: null },
-      sec2: { time: Infinity, driverNum: null },
-      sec3: { time: Infinity, driverNum: null },
-      speed: { val: 0, driverNum: null }
-    };
+    // 2. ดึงข้อมูล Laps เพื่อหา Sector ที่เร็วที่สุด และ Speed Trap
+    const lapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`);
+    const laps = await lapsRes.json();
 
-    if (Array.isArray(laps)) {
-      laps.forEach(lap => {
-        if (lap.duration_sector_1 && lap.duration_sector_1 < best.sec1.time) {
-          best.sec1 = { time: lap.duration_sector_1, driverNum: lap.driver_number };
-        }
-        if (lap.duration_sector_2 && lap.duration_sector_2 < best.sec2.time) {
-          best.sec2 = { time: lap.duration_sector_2, driverNum: lap.driver_number };
-        }
-        if (lap.duration_sector_3 && lap.duration_sector_3 < best.sec3.time) {
-          best.sec3 = { time: lap.duration_sector_3, driverNum: lap.driver_number };
-        }
-        if (lap.st_speed && lap.st_speed > best.speed.val) {
-          best.speed = { val: lap.st_speed, driverNum: lap.driver_number };
-        }
-      });
-    }
+    let bestS1 = { time: Infinity, driverNum: null };
+    let bestS2 = { time: Infinity, driverNum: null };
+    let bestS3 = { time: Infinity, driverNum: null };
+    let bestSpeed = { speed: 0, driverNum: null };
 
-    const getDriverUI = (dNum) => {
-      const d = (Array.isArray(drivers) ? drivers : []).find(x => x.driver_number === dNum);
-      if (!d) return { tag: '---', color: '#888888' };
-      
-      const apiLastName = (d.last_name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const appDriver = Object.keys(DRIVER_INFO).find(name => {
-        const cleanName = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return cleanName.includes(apiLastName) || apiLastName.includes(cleanName.split(' ').pop());
-      }) || d.full_name;
-      
-      const info = DRIVER_INFO[appDriver] || { color: d.team_colour ? `#${d.team_colour}` : '#888888' };
-      const shortName = d.name_acronym || (d.last_name || '').substring(0, 3).toUpperCase();
-      return { tag: shortName, color: info.color };
-    };
-
-    ['sec1', 'sec2', 'sec3'].forEach((secKey, idx) => {
-      const targetEl = document.getElementById(`fastestSec${idx + 1}`);
-      if (!targetEl) return;
-      if (best[secKey].driverNum) {
-        const d = getDriverUI(best[secKey].driverNum);
-        targetEl.innerHTML = `<div class="driver-tag" style="--team-color: ${d.color};">${d.tag}</div><div class="sector-time text-purple">${best[secKey].time.toFixed(3)}</div>`;
-      } else {
-        targetEl.innerHTML = `<div class="driver-tag">---</div><div class="sector-time text-secondary">${noDataHtml}</div>`;
+    laps.forEach(lap => {
+      if (lap.duration_sector_1 && lap.duration_sector_1 < bestS1.time) { 
+        bestS1 = { time: lap.duration_sector_1, driverNum: lap.driver_number }; 
+      }
+      if (lap.duration_sector_2 && lap.duration_sector_2 < bestS2.time) { 
+        bestS2 = { time: lap.duration_sector_2, driverNum: lap.driver_number }; 
+      }
+      if (lap.duration_sector_3 && lap.duration_sector_3 < bestS3.time) { 
+        bestS3 = { time: lap.duration_sector_3, driverNum: lap.driver_number }; 
+      }
+      if (lap.st_speed && lap.st_speed > bestSpeed.speed) { 
+        bestSpeed = { speed: lap.st_speed, driverNum: lap.driver_number }; 
       }
     });
 
-    if (spdEl) {
-      if (best.speed.driverNum) {
-        const d = getDriverUI(best.speed.driverNum);
-        spdEl.innerHTML = `<div class="driver-tag me-3" style="--team-color: ${d.color};">${d.tag}</div><div class="speed-val">${best.speed.val} <span class="unit">km/h</span></div>`;
-      } else {
-        spdEl.innerHTML = `<div class="driver-tag me-3">---</div><div class="speed-val text-secondary">${noDataHtml}</div>`;
+    // 3. ฟังก์ชันอัปเดตลง UI โดยเจาะจงเฉพาะ .driver-tag และ .sector-time
+    const updateUI = (elementId, data, isSpeed = false) => {
+      const parentEl = document.getElementById(elementId);
+      if (!parentEl || !data.driverNum) return;
+
+      const driver = driverMap[data.driverNum] || { name: '---', color: '#888888' };
+
+      // อัปเดตชื่อและสีทีม
+      const tagEl = parentEl.querySelector('.driver-tag');
+      if (tagEl) {
+        tagEl.innerText = driver.name;
+        tagEl.style.setProperty('--team-color', driver.color);
       }
-    }
+
+      // อัปเดตตัวเลขเวลา หรือ ความเร็ว
+      const valEl = parentEl.querySelector(isSpeed ? '.speed-val' : '.sector-time');
+      if (valEl) {
+        if (isSpeed) {
+          valEl.innerHTML = `${Math.round(data.speed)} <span class="unit">km/h</span>`;
+        } else {
+          valEl.innerText = data.time.toFixed(3);
+        }
+      }
+    };
+
+    // 4. สั่งรันการอัปเดตแต่ละกล่อง
+    updateUI('fastestSec1', bestS1);
+    updateUI('fastestSec2', bestS2);
+    updateUI('fastestSec3', bestS3);
+    updateUI('highestSpeed', bestSpeed, true);
+
   } catch (error) {
-    console.error('Telemetry HUD Error:', error);
+    console.error("❌ Telemetry HUD Error:", error);
   }
 }
