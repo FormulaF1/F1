@@ -1347,12 +1347,13 @@ function handleRegister(e) {
     showToast(res.msg, res.success ? 'success' : 'error'); btn.disabled = false; 
     if (res.success) { 
       localStorage.setItem('f1_player_name', name); 
+      localStorage.setItem('f1_player_pin', pin); 
       document.getElementById('regName').value = ''; 
       if (pinEl) pinEl.value = ''; 
       regModalInstance.hide(); 
       forceRefreshData(); 
       showTab('tab-pred', document.querySelectorAll('.f1-nav-link')[1]); 
-    } 
+    }
   }); 
 }
 
@@ -1548,39 +1549,6 @@ function animateCountUp(element, target, duration = 2200) {
   window.requestAnimationFrame(step);
 }
 
-function openDriverHero(fullName, rowEl) {
-  triggerHaptic();
-  const info = DRIVER_INFO[fullName];
-  if(!info) return;
-
-  const pts = rowEl.querySelector('.col-pts').innerText;
-  const pos = rowEl.querySelector('.col-pos').innerText;
-  const parts = fullName.split(' ');
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
-
-  document.getElementById('heroDriverFirstName').innerText = firstName;
-  document.getElementById('heroDriverLastName').innerText = lastName;
-  document.getElementById('heroTeamName').innerText = info.team;
-  document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
-  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
-  document.getElementById('heroPos').innerText = 'P' + pos;
-
-  const ptsEl = document.getElementById('heroPoints');
-  ptsEl.innerText = "0"; 
-  
-  setTimeout(() => {
-    animateCountUp(ptsEl, pts, 2200); 
-  }, 10); 
-
-  document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
-
-  if (!window.driverHeroModalInstance) {
-    window.driverHeroModalInstance = new bootstrap.Modal(document.getElementById('driverHeroModal'));
-  }
-  window.driverHeroModalInstance.show();
-}
-
 async function loadOpenF1Meetings() {
   const rSel = document.getElementById('selResultsRace');
   if (!rSel) return;
@@ -1683,17 +1651,12 @@ function refreshTelemetryDashboard(sessionKey = 'latest') {
 
 let communityChartInstance = null;
 
-const driverColors = {
-  "Verstappen": "#3671C6", "Perez": "#3671C6", "Hadjar": "#3671C6", 
-  "Norris": "#FF8000", "Piastri": "#FF8000", 
-  "Leclerc": "#E80020", "Hamilton": "#E80020", "Bearman": "#E80020", 
-  "Russell": "#27F4D2", "Antonelli": "#27F4D2", 
-  "Alonso": "#229971", "Stroll": "#229971", 
-};
-
 function renderConsensusChart(predictionsData, isParcFermeClosed) {
   const lockOverlay = document.getElementById('parcFermeLock');
   const totalBadge = document.getElementById('totalVotersBadge');
+  const flTextEl = document.getElementById('consensusFlText');
+  const flPercentEl = document.getElementById('consensusFlPercent');
+  const flBarEl = document.getElementById('consensusFlBar');
   
   const totalVotes = predictionsData.length;
   if (totalBadge) {
@@ -1701,14 +1664,21 @@ function renderConsensusChart(predictionsData, isParcFermeClosed) {
   }
 
   if (lockOverlay) {
-    if (!isParcFermeClosed) {
-      lockOverlay.style.display = 'flex'; 
-    } else {
-      lockOverlay.style.display = 'none'; 
-    }
+    lockOverlay.style.display = !isParcFermeClosed ? 'flex' : 'none';
   }
 
-  if (totalVotes === 0) return;
+  // รีเซ็ตค่า Fastest Lap ก่อนเสมอ ป้องกันค่าค้างจากสนามก่อนหน้า
+  if (flTextEl) flTextEl.innerHTML = `<i class="fa-solid fa-bolt text-info"></i> เต็ง Fastest Lap: --`;
+  if (flPercentEl) flPercentEl.innerText = `0% (0/0)`;
+  if (flBarEl) flBarEl.style.width = `0%`;
+
+  if (totalVotes === 0) {
+    if (communityChartInstance) {
+      communityChartInstance.destroy();
+      communityChartInstance = null;
+    }
+    return;
+  }
 
   let p1Counts = {};
   let flCounts = {};
@@ -1723,7 +1693,8 @@ function renderConsensusChart(predictionsData, isParcFermeClosed) {
 
   const p1Labels = Object.keys(p1Counts);
   const p1Data = Object.values(p1Counts);
-  const p1Colors = p1Labels.map(name => driverColors[name.split(' ').pop()] || '#888888');
+  // ดึงสีประจำทีมจาก DRIVER_INFO โดยตรง ครบทั้ง 22 คน
+  const p1Colors = p1Labels.map(name => (DRIVER_INFO[name] && DRIVER_INFO[name].color) ? DRIVER_INFO[name].color : '#888888');
 
   const canvasEl = document.getElementById('p1PredictionChart');
   if (!canvasEl) return;
@@ -1798,15 +1769,72 @@ function renderConsensusChart(predictionsData, isParcFermeClosed) {
 
   if (topFlCount > 0) {
     const flPercent = Math.round((topFlCount / totalVotes) * 100);
-    const flTextEl = document.getElementById('consensusFlText');
-    const flPercentEl = document.getElementById('consensusFlPercent');
-    const flBarEl = document.getElementById('consensusFlBar');
-
     if (flTextEl) flTextEl.innerHTML = `<i class="fa-solid fa-bolt text-info"></i> เต็ง Fastest Lap: ${topFlDriver}`;
     if (flPercentEl) flPercentEl.innerText = `${flPercent}% (${topFlCount}/${totalVotes})`;
     if (flBarEl) flBarEl.style.width = `${flPercent}%`;
   }
 }
+
+  const canvasEl = document.getElementById('p1PredictionChart');
+  if (!canvasEl) return;
+  const ctx = canvasEl.getContext('2d');
+  
+  if (communityChartInstance) {
+    communityChartInstance.destroy();
+  }
+
+  communityChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: p1Labels,
+      datasets: [{
+        data: p1Data,
+        backgroundColor: p1Colors,
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '75%', 
+      plugins: {
+        legend: {
+          position: 'right', 
+          labels: { 
+            color: '#ffffff', 
+            font: { family: 'Kanit', size: 10 },
+            boxWidth: 10,
+            padding: 15,
+            generateLabels: function(chart) {
+              const data = chart.data;
+              if (data.labels.length && data.datasets.length) {
+                const dataset = data.datasets[0];
+                const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                
+                return data.labels.map(function(label, i) {
+                  const value = dataset.data[i];
+                  const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                  const color = dataset.backgroundColor[i];
+                  
+                  return {
+                    text: `${label} (${percentage}% - ${value}/${total})`,
+                    fillStyle: color,
+                    strokeStyle: color,
+                    fontColor: '#ffffff',
+                    lineWidth: 0,
+                    hidden: isNaN(dataset.data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                    index: i
+                  };
+                });
+              }
+              return [];
+            }
+          }
+        }
+      }
+    }
+  });
 
 function getShortDriverName(fullName) {
   if (!fullName || fullName === '-') return '-';
@@ -2238,25 +2266,37 @@ function formatTelemetryText(text) {
 }
 
 // ส่งข้อความไปหา AI
+let radioChatHistory = [];
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function sendRadioMessage() {
   const inputEl = document.getElementById('chatInput');
   const message = inputEl.value.trim();
   if (!message) return;
 
   const chatBox = document.getElementById('chatBox');
+  const safeUserMsg = escapeHtml(message);
 
-  // 1. เพิ่มข้อความของผู้เล่น (User) ฝั่งขวา
-  chatBox.innerHTML += `
+  // 1. เพิ่มข้อความของผู้เล่น (User) ฝั่งขวาแบบปลอดภัยด้วย insertAdjacentHTML
+  chatBox.insertAdjacentHTML('beforeend', `
     <div class="msg-wrapper user">
-      <div class="msg-bubble">${message}</div>
+      <div class="msg-bubble">${safeUserMsg}</div>
     </div>
-  `;
+  `);
   inputEl.value = "";
   chatBox.scrollTop = chatBox.scrollHeight;
 
   // 2. ขึ้นแอนิเมชันคลื่นวิทยุ (รอ AI คิด) ฝั่งซ้าย
   const waveId = 'wave-' + Date.now();
-  chatBox.innerHTML += `
+  chatBox.insertAdjacentHTML('beforeend', `
     <div class="msg-wrapper ai" id="${waveId}">
       <div class="msg-bubble">
         <div class="radio-wave">
@@ -2265,7 +2305,7 @@ function sendRadioMessage() {
         </div>
       </div>
     </div>
-  `;
+  `);
   chatBox.scrollTop = chatBox.scrollHeight;
 
   // 3. เตรียมข้อมูลผู้เล่นและสนามจริง ส่งไป Backend
@@ -2280,36 +2320,37 @@ function sendRadioMessage() {
     playerName: player,
     raceName: currentRace,
     message: message,
-    chatHistory: [] 
+    chatHistory: radioChatHistory.slice(-4) // ส่งประวัติบทสนทนา 4 ข้อความล่าสุดไปด้วย
   };
 
-  // 4. เรียกใช้ฟังก์ชัน callGAS สำหรับ GitHub Pages
+  // 4. เรียกใช้ฟังก์ชัน callGAS
   callGAS("askRaceEngineer", clientData)
     .then(function(response) {
-      // ลบคลื่นวิทยุออก
       const waveEl = document.getElementById(waveId);
       if (waveEl) waveEl.remove();
       
-      // ใส่ข้อความที่ตอบกลับมา
       let finalMsg = response.message || response.msg || "ไม่มีการตอบกลับ";
-      const formattedText = formatTelemetryText(finalMsg);
+      radioChatHistory.push({ role: "user", content: message });
+      radioChatHistory.push({ role: "assistant", content: finalMsg });
+
+      const formattedText = formatTelemetryText(escapeHtml(finalMsg)).replace(/\n/g, '<br>');
       
-      chatBox.innerHTML += `
+      chatBox.insertAdjacentHTML('beforeend', `
         <div class="msg-wrapper ai">
           <div class="msg-bubble">${formattedText}</div>
         </div>
-      `;
+      `);
       chatBox.scrollTop = chatBox.scrollHeight;
     })
     .catch(function(error) {
       const waveEl = document.getElementById(waveId);
       if (waveEl) waveEl.remove();
       
-      chatBox.innerHTML += `
+      chatBox.insertAdjacentHTML('beforeend', `
         <div class="msg-wrapper ai">
-          <div class="msg-bubble" style="border-left-color: #ff9800;">⚠️ สัญญาณขาดหาย: ${error.toString()}</div>
+          <div class="msg-bubble" style="border-left-color: #ff9800;">⚠️ สัญญาณขาดหาย: ${escapeHtml(error.toString())}</div>
         </div>
-      `;
+      `);
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 }
