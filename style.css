@@ -3903,12 +3903,12 @@ body {
   padding-bottom: calc(110px + env(safe-area-inset-bottom, 20px)) !important;
 }
 .tab-pane-custom {
-  padding-bottom: 10px !important;
+  padding-bottom: 7px !important;
 }
 
 /* 📌 ปรับให้ปุ่ม SUBMIT PREDICTION มีพื้นที่หายใจและไม่ชิดติดแถบเมนูป้านเกินไป */
 #btnPred {
-  margin-bottom: 15px !important;
+  margin-bottom: 10px !important;
 }
 /* =========================================================
    🏎️ F1 OFFICIAL DESIGN SYSTEM UPGRADE (FORMULA1.COM STYLE)
