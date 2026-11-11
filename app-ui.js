@@ -2126,8 +2126,7 @@ function previewDriverBeforeSelect(fullName) {
   }
 }
 
-const originalOpenDriverHero = openDriverHero;
-openDriverHero = function(fullName, rowEl) {
+function openDriverHero(fullName, rowEl) {
   triggerHaptic();
   const info = DRIVER_INFO[fullName];
   if(!info) return;
@@ -2177,7 +2176,7 @@ openDriverHero = function(fullName, rowEl) {
     window.driverHeroModalInstance = new bootstrap.Modal(document.getElementById('driverHeroModal'));
   }
   window.driverHeroModalInstance.show();
-};
+}
 
 // ==========================================
 // 🔴 PIT WALL RADIO LOGIC (FRONT-END TELEMETRY)
