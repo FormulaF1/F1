@@ -89,6 +89,23 @@ window.onload = function() {
   loadLatestNews();
   loadDriverStatsAPI();
   updateRadioButtonVisibility();
+
+  // แจ้งเตือนเมื่อสัญญาณอินเทอร์เน็ตมีการเปลี่ยนแปลง
+  window.addEventListener('offline', function() { showToast('สัญญาณสื่อสารขาดหาย (OFFLINE)', 'error'); });
+  window.addEventListener('online', function() { showToast('เชื่อมต่อสัญญาณอีกครั้ง (ONLINE)', 'success'); });
+
+  // 🎯 ดันแถบเมนูให้อยู่เหนือ Modal เฉพาะตอนเปิดดูตารางเวลา
+  const wtModalEl = document.getElementById('weekendTimetableModal');
+  if (wtModalEl) {
+    wtModalEl.addEventListener('show.bs.modal', function() {
+      const nav = document.querySelector('.f1-nav-tabs');
+      if (nav) nav.style.setProperty('z-index', '1060', 'important'); // ดันเมนูขึ้นมาทับกระจกดำ
+    });
+    wtModalEl.addEventListener('hidden.bs.modal', function() {
+      const nav = document.querySelector('.f1-nav-tabs');
+      if (nav) nav.style.setProperty('z-index', '1050', 'important'); // คืนค่าเดิมเมื่อปิด
+    });
+  }
 };
 
 function buildDriverGrid() {
@@ -357,12 +374,20 @@ function confirmLoginGate() {
 
 function showTab(tabId, el) { 
   triggerHaptic(); 
+
+  // 🎯 ปิด Modal ทั้งหมดที่เปิดอยู่ เมื่อกดเปลี่ยนแท็บที่เมนูด้านล่าง
+  const openModals = document.querySelectorAll('.modal.show');
+  openModals.forEach(modalEl => {
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
+  });
+
   document.querySelectorAll('.tab-pane-custom').forEach(function(p) { p.style.display = 'none'; }); 
   document.querySelectorAll('.f1-nav-link').forEach(function(l) { l.classList.remove('active'); }); 
   document.getElementById(tabId).style.display = 'block'; 
   el.classList.add('active'); 
 
-  // 🎯 ควบคุมการแสดงผลปุ่ม Radio (แสดงเฉพาะหน้าทายผล tab-pred เท่านั้น)
+  // 🎯 ควบคุมการแสดงผลปุ่ม Radio (แสดงเฉพาะหน้าทายผล tab-pred)
   const radioBtn = document.getElementById('btnTeamRadio');
   if (radioBtn) {
     if (tabId === 'tab-pred') {
@@ -372,8 +397,27 @@ function showTab(tabId, el) {
       closeTeamRadio();
     }
   }
-}
 
+  // 🚀 [ใหม่] เลื่อนหน้าจอไปที่สนาม NEXT อัตโนมัติเมื่อกดแท็บ SCHEDULE
+  // (หมายเหตุ: ถ้า ID แท็บตารางเวลาของคุณไม่ใช่ 'tab-schedule' ให้แก้ชื่อให้ตรงนะครับ)
+  if (tabId === 'tab-schedule') { 
+    setTimeout(function() {
+      const scheduleContainer = document.getElementById(tabId);
+      if (scheduleContainer) {
+        // ค้นหา Element ทุกตัวในหน้านี้
+        const elements = scheduleContainer.querySelectorAll('*');
+        for (let i = 0; i < elements.length; i++) {
+          // ดักจับคำว่า 'NEXT' ที่เราใช้เป็นป้าย
+          if (elements[i].textContent.trim() === 'NEXT') {
+            // เลื่อนการ์ดนั้นมาไว้ตรงกลางจอ (center) แบบนุ่มนวล (smooth)
+            elements[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            break; // เจอแล้วหยุดหา
+          }
+        }
+      }
+    }, 150); // หน่วงเวลาเล็กน้อย 0.15 วิ ให้หน้าต่างแสดงผลเสร็จก่อนแล้วค่อยเลื่อน
+  }
+}
 function forceRefreshData() { 
   if (isRefreshing) return;
   isRefreshing = true;
@@ -550,6 +594,8 @@ function renderUI(data) {
       finishedSelect.innerHTML = '<option value="" disabled selected>-- เลือกสนาม --</option>' + calcRaces.map(function(r) { return '<option value="' + r.id + '">🏁 ' + r.name + '</option>'; }).join(''); 
     }
   }
+  // เรียกใช้ฟังก์ชันวาดหน้าปฏิทิน
+      renderScheduleTab();
 }
 
 function loadData(ignoreCache = false) {
@@ -2305,4 +2351,260 @@ function sendQuickRadioPrompt(promptText) {
   if (!inputEl) return;
   inputEl.value = promptText;
   sendRadioMessage(); // สั่งให้ส่งข้อความเข้าแชททันที
+}
+
+// ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
+function closeTeamRadio() {
+  const modal = document.getElementById('pitWallModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    modal.classList.add('hidden');
+  }
+}
+// ==========================================
+// 🗓️ SCHEDULE TAB RENDERER & TIMETABLE MODAL
+// ==========================================
+let weekendTimetableModalInstance = null;
+let currentViewingRaceId = null;
+
+const COUNTRY_FLAGS = {
+  "bahrain": "bh", "saudi arabia": "sa", "australia": "au",
+  "japan": "jp", "china": "cn", "miami": "us", "imola": "it", "emilia romagna": "it",
+  "monaco": "mc", "canada": "ca", "spain": "es", "austria": "at",
+  "great britain": "gb", "hungary": "hu", "belgium": "be", "netherlands": "nl",
+  "italy": "it", "azerbaijan": "az", "singapore": "sg", "united states": "us", "austin": "us",
+  "mexico": "mx", "brazil": "br", "las vegas": "us", "qatar": "qa", "abu dhabi": "ae"
+};
+
+async function renderScheduleTab() {
+  const container = document.getElementById('scheduleListContainer');
+  if (!container || !globalRaces || globalRaces.length === 0) return;
+
+  const now = new Date();
+  let nextRaceId = null;
+
+  const upcomingRaces = globalRaces.filter(r => r.deadline && new Date(r.deadline) > now);
+  if (upcomingRaces.length > 0) nextRaceId = upcomingRaces[0].id;
+
+  let openF1Meetings = [];
+  try {
+    const cached = sessionStorage.getItem('openF1_meetings_2026');
+    if (cached) openF1Meetings = JSON.parse(cached);
+    else {
+      const res = await fetch('https://api.openf1.org/v1/meetings?year=2026');
+      openF1Meetings = await res.json();
+      sessionStorage.setItem('openF1_meetings_2026', JSON.stringify(openF1Meetings));
+    }
+  } catch (e) { console.error("API Error:", e); }
+
+  let html = '';
+  
+  globalRaces.forEach((race, index) => {
+    const isNext = race.id === nextRaceId;
+    const roundNum = String(index + 1);
+    
+    const apiMatch = openF1Meetings.find(m => 
+      race.name.toLowerCase().includes(m.meeting_name.toLowerCase()) || 
+      m.meeting_name.toLowerCase().includes(race.name.toLowerCase().replace(' grand prix', ''))
+    ) || openF1Meetings[index];
+
+    const officialName = apiMatch && apiMatch.meeting_official_name ? apiMatch.meeting_official_name : (race.type === 'Sprint' ? 'FORMULA 1 SPRINT WEEKEND 2026' : 'FORMULA 1 GRAND PRIX 2026');
+    const shortCountryName = apiMatch && apiMatch.meeting_name ? apiMatch.meeting_name : race.name;
+
+    let flagCode = "un"; 
+    Object.keys(COUNTRY_FLAGS).forEach(key => {
+      if (shortCountryName.toLowerCase().includes(key)) flagCode = COUNTRY_FLAGS[key];
+    });
+    const flagImgHtml = `<img src="https://flagcdn.com/w40/${flagCode}.png" class="sch-flag" alt="${shortCountryName}">`;
+
+    let dateDisplay = "TBC";
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+    if (apiMatch && apiMatch.date_start) {
+      const dtStart = new Date(apiMatch.date_start);
+      const dtEnd = new Date(dtStart);
+      dtEnd.setDate(dtStart.getDate() + 2); 
+      if (dtStart.getMonth() === dtEnd.getMonth()) {
+        dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
+      } else {
+        dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} ${monthNames[dtStart.getMonth()]} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
+      }
+    } else if (race.deadline) {
+      const dtEnd = new Date(race.deadline);
+      const dtStart = new Date(dtEnd);
+      dtStart.setDate(dtEnd.getDate() - 2); 
+      if (dtStart.getMonth() === dtEnd.getMonth()) dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
+      else dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} ${monthNames[dtStart.getMonth()]} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
+    }
+
+   const trackImgSrc = (race.media && race.media.trackLayoutImg) ? getDriveDirectLink(race.media.trackLayoutImg) : '';
+    const bgImgSrc = (race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj';
+    
+    // ดึงรูปโปสเตอร์จากคอลัมน์ I (ถ้าไม่ได้ใส่ไว้ ให้กลับไปใช้รูปปกสนาม bgImgSrc แทน)
+    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : bgImgSrc;
+    
+    // ผูก Event Onclick ส่ง posterImgSrc ไปแสดงใน Bottom Sheet
+    const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${posterImgSrc}', '${trackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
+
+    if (isNext) {
+      html += `
+        <div class="card mb-1 border-0 rounded-4 overflow-hidden position-relative shadow-lg" ${clickAction} style="min-height: 220px; cursor: pointer;">
+          
+          <!-- 1. รูปพื้นหลัง (ขยายความสูงเป็น 220px ให้ภาพใหญ่เต็มตา) -->
+          <img src="${posterImgSrc}" class="position-absolute w-100 h-100" style="object-fit: cover; object-position: center; opacity: 1;" alt="${shortCountryName}" loading="lazy">
+          
+          <!-- 2. เงาดำไล่ระดับ เพื่อให้ตัวหนังสือลอยเด่นแต่ไม่บังความสวยของรูป -->
+          <div class="position-absolute w-100 h-100 z-1" style="background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 40%, transparent 60%, rgba(0,0,0,0.9) 100%); pointer-events: none;"></div>
+
+          <!-- 3. ป้าย NEXT สีแดงสด มุมขวาบน (ปรับดีไซน์ใหม่) -->
+          <div class="position-absolute top-0 end-0 z-3 m-3">
+            <span class="badge text-white px-3 py-2 shadow" style="background-color: #e10600; font-size: 0.85rem; letter-spacing: 1.5px; border-radius: 6px;">NEXT</span>
+          </div>
+
+          <!-- 4. เนื้อหาด้านซ้ายบน: ธง + Round + ชื่อสนาม -->
+          <div class="position-absolute top-0 start-0 p-3 z-2 w-75">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              ${flagImgHtml}
+              <span class="text-white fw-bold small" style="letter-spacing: 1px; text-transform: uppercase;">ROUND ${roundNum}</span>
+            </div>
+            <!-- ขยายชื่อสนามให้ใหญ่ขึ้น (h3) ตามเรฟเฟอเรนซ์ -->
+            <h3 class="text-white fw-bold f1-font mb-0 mt-1" style="text-shadow: 0 2px 8px rgba(0,0,0,0.9); line-height: 1.1; letter-spacing: 0.5px;">${shortCountryName}</h3>
+          </div>
+
+          <!-- 5. วันที่ ย้ายมามุมซ้ายล่างสุด (สไตล์คลีนๆ ไร้ไอคอน) -->
+          <div class="position-absolute bottom-0 start-0 p-3 z-2 w-100">
+            <div class="text-white fw-bold f1-font" style="font-size: 1.1rem; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">
+              ${dateDisplay}
+            </div>
+          </div>
+          
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="card mb-1 border-0 rounded-4 shadow-sm" ${clickAction} style="cursor: pointer; background-color: #1a1d24;">
+          <div class="card-body p-3">
+            
+            <!-- 1. ธง + ชื่อสนาม (ปรับให้เล็กลงและอยู่บรรทัดเดียวกัน) -->
+            <div class="d-flex align-items-center mb-1">
+              <span class="text-secondary fw-bold small me-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">ROUND ${roundNum}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              ${flagImgHtml}
+              <h5 class="text-white fw-bold f1-font mb-0" style="font-size: 1.1rem; letter-spacing: 0.5px;">${shortCountryName}</h5>
+            </div>
+
+            <!-- 2. ชื่อเต็มอย่างเป็นทางการ (สีเทา ขนาดเล็กสุด) -->
+            <div class="text-secondary mb-3" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+              ${officialName}
+            </div>
+
+            <!-- 3. วันที่ (ซ้าย) และ รูปผังสนาม (ขวา) ให้อยู่ระดับเดียวกัน -->
+            <div class="d-flex justify-content-between align-items-end mt-2">
+              
+              <!-- ป้ายวันที่ (พื้นหลังขาว ตัวหนังสือดำ แบบในรูปอ้างอิง) -->
+              <div class="bg-white text-dark fw-bold px-2 py-1 rounded" style="font-size: 0.8rem; letter-spacing: 1px;">
+                <i class="fa-solid fa-flag-checkered me-2 text-danger"></i>${dateDisplay}
+              </div>
+              
+              <!-- รูปผังสนาม (ถ้ามี) แสดงทางขวาล่าง -->
+              ${trackImgSrc ? `<img src="${trackImgSrc}" alt="Layout" loading="lazy" style="height: 40px; width: auto; filter: brightness(0) invert(1); opacity: 0.8;">` : ''}
+              
+            </div>
+            
+          </div>
+        </div>
+      `;
+    }
+  });
+  container.innerHTML = html;
+}
+
+async function openWeekendTimetable(raceId, countryName, officialName, flagCode, bgImgSrc, trackImgSrc, meetingKey) {
+  triggerHaptic();
+  currentViewingRaceId = raceId;
+
+  // กำหนด UI พื้นฐาน
+  document.getElementById('wtCountryName').innerText = countryName;
+  document.getElementById('wtOfficialName').innerText = officialName;
+  document.getElementById('wtFlagImg').src = `https://flagcdn.com/w40/${flagCode}.png`;
+  document.getElementById('wtBgImg').src = bgImgSrc;
+  document.getElementById('wtTrackImg').src = trackImgSrc || '';
+  document.getElementById('wtTrackImg').style.display = trackImgSrc ? 'block' : 'none';
+
+  // จัดการแสดงผลกรอบผังสนาม (ซ่อนทั้งกรอบ ถ้าไม่มีรูป)
+  const trackContainer = document.getElementById('wtTrackContainer');
+  if (trackContainer) {
+    trackContainer.style.display = trackImgSrc ? 'block' : 'none';
+  }
+
+  const tlContainer = document.getElementById('wtTimelineContainer');
+  tlContainer.innerHTML = '<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="small text-secondary">LOADING SESSIONS...</div></div>';
+
+  if (!weekendTimetableModalInstance) {
+    weekendTimetableModalInstance = new bootstrap.Modal(document.getElementById('weekendTimetableModal'));
+  }
+  weekendTimetableModalInstance.show();
+
+  // ดึงข้อมูลตารางเวลาแต่ละ Session จาก API
+  if (meetingKey) {
+    try {
+      const res = await fetch(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`);
+      const sessions = await res.json();
+      sessions.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+
+      let timelineHtml = '';
+      const days = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
+      
+      sessions.forEach(s => {
+        const dt = new Date(s.date_start);
+        const dayStr = `${days[dt.getDay()].substring(0,3)} ${String(dt.getDate()).padStart(2,'0')} ${dt.toLocaleString('en-US', {month: 'short'}).toUpperCase()}`;
+        const timeStr = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+        
+        let typeClass = '';
+        if (s.session_name.toLowerCase().includes('race')) typeClass = 'tl-race';
+        else if (s.session_name.toLowerCase().includes('qualifying')) typeClass = 'tl-quali';
+
+        timelineHtml += `
+          <div class="tl-item ${typeClass}">
+            <div class="tl-day">${dayStr}</div>
+            <div class="tl-content">
+              <div class="tl-session">${s.session_name.toUpperCase()}</div>
+              <div class="tl-time"><i class="fa-regular fa-clock me-1"></i>${timeStr}</div>
+            </div>
+          </div>
+        `;
+      });
+
+      tlContainer.innerHTML = timelineHtml || '<div class="text-secondary small text-center py-3">ยังไม่มีกำหนดการเซสชัน</div>';
+    } catch (e) {
+      tlContainer.innerHTML = '<div class="text-danger small text-center py-3">ไม่สามารถดึงตารางเวลาได้</div>';
+    }
+  } else {
+    tlContainer.innerHTML = '<div class="text-secondary small text-center py-3">ตารางเวลายังไม่ถูกประกาศ</div>';
+  }
+}
+
+// ฟังก์ชันปุ่มลัด: ปิดตารางเวลา แล้วพาวาร์ปไปแท็บ Telemetry เพื่อดู Archive สนามนั้น
+function jumpToArchiveFromSchedule() {
+  triggerHaptic();
+  weekendTimetableModalInstance.hide();
+  
+  // รอ Modal ปิดสนิทก่อนสลับแท็บ
+  setTimeout(() => {
+    // 1. สลับไปหน้า Telemetry
+    const telemetryTabBtn = document.querySelectorAll('.f1-nav-link')[2]; 
+    showTab('tab-center', telemetryTabBtn);
+    
+    // 2. ปรับค่า Dropdown ของ Archive ให้ตรงกับสนามที่กดมา
+    const archiveSelect = document.getElementById('sel2025Race');
+    if (archiveSelect && currentViewingRaceId) {
+      archiveSelect.value = currentViewingRaceId;
+      on2025RaceChange(); 
+    }
+    
+    // 3. เลื่อนหน้าจอลงไปที่ส่วน Archive
+    const archiveHeader = document.getElementById('content2025');
+    if (archiveHeader) archiveHeader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  }, 300);
 }
