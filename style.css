@@ -4029,3 +4029,311 @@ body {
   box-shadow: 0 0 10px rgba(255, 40, 0, 0.4);
   transform: translateY(-1px);
 }
+/* =========================================================
+   SCHEDULE TAB (OFFICIAL APP UI - DARK MODE)
+   ========================================================= */
+.schedule-card {
+  background: #15151e;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 160px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  text-decoration: none;
+  color: #ffffff;
+  overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.schedule-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(225, 6, 0, 0.5);
+}
+
+.schedule-card-next {
+  background: #000000;
+  border: 1px solid rgba(225, 6, 0, 0.4);
+  min-height: 220px;
+  padding: 20px;
+}
+
+.schedule-bg-img {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.schedule-card-next .schedule-bg-img { opacity: 0.9; }
+
+.schedule-card-next::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0) 65%, rgba(0,0,0,0.85) 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.schedule-content, .sch-next-badge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sch-round {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.schedule-card-next .sch-round {
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.sch-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.sch-flag {
+  width: 24px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 0 4px rgba(0,0,0,0.8);
+}
+
+.sch-country {
+  font-family: 'Titillium Web', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  text-transform: capitalize;
+}
+
+.schedule-card-next .sch-country {
+  font-size: 2.2rem;
+  letter-spacing: -0.5px;
+}
+
+.sch-full-name {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  max-width: 85%;
+  line-height: 1.3;
+}
+
+.schedule-card-next .sch-full-name,
+.schedule-card-next .sch-track-outline { 
+  display: none; 
+}
+
+.sch-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 15px;
+}
+
+.schedule-card-next .sch-bottom-row {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.sch-date-pill {
+  background: #ffffff;
+  color: #000000;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedule-card-next .sch-date-pill {
+  background: transparent;
+  color: #ffffff;
+  font-size: 1.3rem;
+  padding: 0;
+  letter-spacing: 1px;
+}
+
+.sch-track-outline {
+  width: 65px;
+  height: auto;
+  filter: brightness(0) invert(1); 
+  opacity: 0.85;
+}
+
+.sch-next-badge {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: #e10600;
+  color: #ffffff;
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(225, 6, 0, 0.5);
+}
+
+/* =========================================================
+   WEEKEND TIMETABLE (TIMELINE UI)
+   ========================================================= */
+.timeline-f1 {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline-f1::before {
+  content: '';
+  position: absolute;
+  top: 5px; left: 4px; bottom: 5px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tl-item {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.tl-item::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: -20px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #334155;
+  border: 2px solid #0d0e12;
+}
+
+.tl-item.tl-race::before {
+  background: #e10600;
+  box-shadow: 0 0 8px #e10600;
+}
+
+.tl-item.tl-quali::before {
+  background: #f59e0b;
+}
+
+.tl-day {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.tl-content {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.tl-session {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.tl-quali .tl-session { color: #f59e0b; }
+.tl-race .tl-session { color: #e10600; font-size: 1.1rem; }
+
+.tl-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+/* =========================================================
+   FULL SCREEN WEEKEND TIMETABLE MODAL (APP STYLE)
+   ========================================================= */
+/* จัดให้ชิดขอบจอและจำกัดความกว้างให้สวยงามพอดี */
+#weekendTimetableModal .modal-dialog-bottom {
+  margin: 0 auto !important;
+  max-width: 540px !important; /* ล็อกขนาดไม่ให้เทอะทะเมื่อเปิดในจอคอม */
+  height: 100% !important;
+  display: flex;
+  align-items: flex-end; /* ให้สไลด์ขึ้นจากด้านล่าง */
+}
+
+/* ขยาย Modal ให้สูงเต็มจอ 100% (ไร้ขอบโค้ง) */
+#weekendTimetableModal .modal-content {
+  height: 100vh !important; /* ความสูง 100% ของจอ */
+  height: 100dvh !important; /* ปรับอัตโนมัติตามแถบเครื่องมือของมือถือรุ่นใหม่ */
+  border-radius: 0 !important; /* ลบขอบโค้งออก ให้แนบสนิทขอบจอ */
+  border: none !important;
+}
+
+/* ยกเลิกการจำกัดความสูงเดิม และเว้นที่ว่างด้านล่าง 110px เพื่อไม่ให้เมนูลอยบังปุ่ม */
+#weekendTimetableModal .modal-body {
+  max-height: none !important;
+  padding-bottom: 120px !important; 
+}
+/* =========================================================
+   ปุ่ม RACE ARCHIVE (สไตล์ Electric Cyan HUD Glassmorphism)
+   ========================================================= */
+.btn-archive-hud {
+  background: rgba(13, 20, 30, 0.6); /* พื้นหลังโทน Deep Navy โปร่งแสง */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 210, 255, 0.35); /* ขอบสี Electric Cyan แบบบาง */
+  color: #00d2ff;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 210, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* เอฟเฟกต์เวลาแตะหรือนำเมาส์ไปชี้ (Hover/Active) */
+.btn-archive-hud:hover, .btn-archive-hud:active {
+  background: rgba(0, 210, 255, 0.15);
+  border-color: #00d2ff;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(0, 210, 255, 0.35), inset 0 0 10px rgba(0, 210, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.btn-archive-hud i {
+  font-size: 1.15rem;
+}
