@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🏁 F1 PREDICTION LEAGUE 2026</title>
 
@@ -59,7 +59,7 @@
     <i class="fa-solid fa-chart-line"></i><span>TELEMETRY</span>
   </button> 
 </div>
-    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-2025', this)"><i class="fa-solid fa-clock-rotate-left"></i><span>ARCHIVE</span></button></div>
+    <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-schedule', this)"><i class="fa-regular fa-calendar-days"></i><span>SCHEDULE</span></button></div>
     <div class="f1-nav-item"><button class="f1-nav-link" onclick="showTab('tab-community', this)"><i class="fa-solid fa-users-viewfinder"></i><span>COMMUNITY</span></button></div>
   </div>
 
@@ -480,60 +480,73 @@
                 </span>
               </div>
               <img id="thumbPractice" src="" class="img-fluid w-100" style="border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);" alt="Practice Results">
-            </div>
-          </div>
         </div>
       </div>
     </div>
-    <!-- ==========================================
-         4. Race Archive Tab
-         ========================================== -->
-    <div id="tab-2025" class="tab-pane-custom" style="display: none;">
-      <div class="f1-card p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="section-header-f1 m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>RACE ARCHIVE</h2>
-          <span class="small text-secondary" style="font-size:0.75rem;">ผลฤดูกาลก่อนหน้า</span>
+  </div> <!-- ปิดโซนเนื้อหาของ Telemetry -->
+  
+  <!-- ==========================================
+       ส่วนที่ย้ายมา: RACE ARCHIVE (ผลปีก่อนหน้า) นำมาต่อท้ายในแท็บ TELEMETRY
+       ========================================== -->
+  <div class="mt-4 pt-3 px-3 border-top border-secondary">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="section-header-f1 m-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>RACE ARCHIVE</h2>
+      <span class="small text-secondary" style="font-size:0.75rem;">ผลฤดูกาลก่อนหน้า</span>
+    </div>
+    
+    <div class="mb-3">
+      <select id="sel2025Race" class="form-select archive-race-select" onchange="on2025RaceChange()">
+        <option value="" disabled selected>-- เลือกสนาม --</option>
+      </select>
+    </div>
+
+    <div id="content2025" style="display: none;">
+      <div class="archive-segmented-control mb-3">
+        <button type="button" id="segBtnQuali" class="archive-seg-btn active-quali" onclick="switchArchiveMode('quali2025')">
+          <i class="fa-solid fa-stopwatch me-1"></i> QUALIFYING
+          <span class="seg-dot" id="dotQuali2025"></span>
+        </button>
+        <button type="button" id="segBtnRace" class="archive-seg-btn" onclick="switchArchiveMode('race2025')">
+          <i class="fa-solid fa-flag-checkered me-1"></i> MAIN RACE
+          <span class="seg-dot" id="dotRace2025"></span>
+        </button>
+      </div>
+
+      <div class="archive-scifi-header">
+        <span id="archiveHeaderTitle"><i class="fa-solid fa-bolt text-info me-2"></i>QUALIFYING CLASSIFICATION</span>
+        <div class="archive-scifi-line"></div>
+      </div>
+
+      <div id="archiveViewerBox" class="archive-cinematic-viewer" onclick="openActiveArchivePreview()">
+        <img id="archiveMainImg" src="" class="archive-fullbleed-img rounded-4 shadow" alt="Archive Result" style="display: none;">
+        <div id="archiveFloatingBadge" class="archive-floating-zoom" style="display: none;">
+          <i class="fa-solid fa-magnifying-glass-plus text-danger me-1"></i> แตะเพื่อขยาย
         </div>
-        
-        <div class="mb-3">
-          <label class="form-label">เลือกสนามย้อนหลัง</label>
-          <select id="sel2025Race" class="form-select archive-race-select" onchange="on2025RaceChange()">
-            <option value="" disabled selected>-- เลือกสนาม --</option>
-          </select>
-        </div>
-
-        <div id="content2025" style="display: none;">
-          <div class="archive-segmented-control mb-3">
-            <button type="button" id="segBtnQuali" class="archive-seg-btn active-quali" onclick="switchArchiveMode('quali2025')">
-              <i class="fa-solid fa-stopwatch me-1"></i> QUALIFYING
-              <span class="seg-dot" id="dotQuali2025"></span>
-            </button>
-            <button type="button" id="segBtnRace" class="archive-seg-btn" onclick="switchArchiveMode('race2025')">
-              <i class="fa-solid fa-flag-checkered me-1"></i> MAIN RACE
-              <span class="seg-dot" id="dotRace2025"></span>
-            </button>
-          </div>
-
-          <div class="archive-scifi-header">
-            <span id="archiveHeaderTitle"><i class="fa-solid fa-bolt text-info me-2"></i>QUALIFYING CLASSIFICATION</span>
-            <div class="archive-scifi-line"></div>
-          </div>
-
-          <div id="archiveViewerBox" class="archive-cinematic-viewer" onclick="openActiveArchivePreview()">
-            <img id="archiveMainImg" src="" class="archive-fullbleed-img" alt="Archive Result" style="display: none;">
-            <div id="archiveFloatingBadge" class="archive-floating-zoom" style="display: none;">
-              <i class="fa-solid fa-magnifying-glass-plus text-danger me-1"></i> แตะเพื่อขยาย
-            </div>
-            <div id="archiveEmptyState" class="archive-empty-telemetry" style="display: none;">
-              <i class="fa-solid fa-satellite-dish mb-2"></i>
-              <div class="f1-font fw-bold text-white" style="letter-spacing: 1px;">NO TELEMETRY DATA ARCHIVED</div>
-              <div class="small text-secondary mt-1" style="font-size: 0.72rem;">ยังไม่มีภาพบันทึกผลการแข่งขันในโหมดนี้</div>
-            </div>
-          </div>
+        <div id="archiveEmptyState" class="archive-empty-telemetry" style="display: none;">
+          <i class="fa-solid fa-satellite-dish mb-2"></i>
+          <div class="f1-font fw-bold text-white" style="letter-spacing: 1px;">NO TELEMETRY DATA ARCHIVED</div>
+          <div class="small text-secondary mt-1" style="font-size: 0.72rem;">ยังไม่มีภาพบันทึกผลการแข่งขันในโหมดนี้</div>
         </div>
       </div>
     </div>
+  </div>
 
+</div> <!-- ปิดกล่อง f1-card ของแท็บ Telemetry -->
+</div> <!-- ปิดแท็บ tab-center (Telemetry หลัก) อย่างสมบูรณ์ -->
+
+<!-- ==========================================
+     4. Schedule Tab (แท็บปฏิทินแข่ง สร้างใหม่)
+     ========================================== -->
+<div id="tab-schedule" class="tab-pane-custom" style="display: none;">
+  <div class="d-flex justify-content-between align-items-center mb-3 px-3 mt-2">
+    <h1 class="f1-font text-white m-0" style="font-size: 1.8rem; font-style: italic; font-weight: 900;">SCHEDULE</h1>
+    <span class="badge bg-danger rounded-pill px-3 py-2" style="font-weight: 700; letter-spacing: 1px;">2026 SEASON</span>
+  </div>
+  
+  <div id="scheduleListContainer" class="d-flex flex-column gap-3 px-3 pb-4">
+    <!-- การ์ดปฏิทินจะถูกสร้างที่นี่ด้วย JavaScript อัตโนมัติ -->
+  </div>
+</div>
    <!-- ==========================================
          5. Community Tab
          ========================================== -->
@@ -844,7 +857,65 @@
       </div>
     </div>
   </div>
+<!-- Weekend Timetable Bottom Sheet -->
+  <div class="modal fade bottom-sheet-modal" id="weekendTimetableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-bottom">
+      <div class="modal-content f1-card border-secondary text-white" style="background: #0d0e12 !important;">
+        <!-- Header: รูปปกและชื่อสนาม -->
+        <!-- Header: รูปปกและชื่อสนาม (ขยายใหญ่สไตล์ Cinematic) -->
+        <!-- 1. เพิ่มความสูงเป็น 340px เพื่อดันข้อความให้ต่ำลงมาอีก -->
+        <div class="position-relative" style="height: 310px; overflow: hidden; background-color: #000;">
+          
+          <!-- 2. ปรับ object-position เป็น center 30px เพื่อเลื่อนตัวรูปภาพลงมาจากขอบจอด้านบน -->
+          <img id="wtBgImg" src="" class="position-absolute w-100 h-100" style="object-fit: cover; object-position: center 3px; opacity: 0.85;" alt="">
+          
+          <!-- เงาดำโปร่งแสงด้านบน (กันตัวเลขแบตเตอรี่กลืนกับรูป) -->
+          <div class="position-absolute top-0 start-0 w-100 h-100 z-1" style="background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 20%); pointer-events: none;"></div>
 
+          <!-- ปุ่ม Back มุมซ้ายบน (ลดขนาดแล้ว) -->
+          <div class="position-absolute top-0 start-0 p-3 z-3 mt-3 ms-1">
+            <button type="button" class="btn d-flex justify-content-center align-items-center rounded-circle" data-bs-dismiss="modal" style="width: 32px; height: 32px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+              <i class="fa-solid fa-chevron-left text-white" style="font-size: 0.9rem; margin-right: 2px;"></i>
+            </button>
+          </div>
+          
+          <!-- 3. ดันเงาดำด้านล่างให้สูงขึ้น โดยเพิ่ม padding-top: 80px และปรับการไล่สีให้กินพื้นที่ขึ้นไปข้างบน -->
+          <div class="position-absolute bottom-0 start-0 p-3 z-2 w-100" style="background: linear-gradient(0deg, #0d0e12 0%, #0d0e12 15%, rgba(13,14,18,0.9) 65%, transparent 100%); padding-top: 80px !important; padding-bottom: 10px !important;">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <img id="wtFlagImg" src="" class="sch-flag" style="width: 28px; height: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);" alt="">
+              <h4 id="wtCountryName" class="m-0 text-white fw-bold f1-font" style="letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">COUNTRY</h4>
+            </div>
+            <div id="wtOfficialName" class="small text-light fw-bold" style="font-size: 0.65rem; text-transform: uppercase; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">OFFICIAL NAME</div>
+          </div>
+        </div>
+
+        <div class="modal-body p-3" style="max-height: 70vh; overflow-y: auto;">
+          
+          <!-- 1. Weekend Timeline (ขยับขึ้นมาอยู่บนสุด) -->
+          <h6 class="text-white fw-bold mb-3 mt-2 f1-font" style="letter-spacing: 1px;"><i class="fa-regular fa-clock text-danger me-2"></i>WEEKEND TIMETABLE</h6>
+          <div class="timeline-f1" id="wtTimelineContainer">
+            <!-- ไทม์ไลน์จะถูกสร้างด้วย JS -->
+          </div>
+
+          <!-- 2. Track Layout (ย้ายมาไว้ใต้ตารางเวลา RACE) -->
+          <div id="wtTrackContainer" class="text-center mt-4 pt-4 border-top border-secondary">
+            <h6 class="text-secondary fw-bold mb-3 f1-font text-start" style="letter-spacing: 1px;"><i class="fa-solid fa-map-location-dot me-2"></i>TRACK LAYOUT</h6>
+            <!-- ขยายภาพให้ใหญ่เต็มความกว้าง (w-100) และลบ Filter ออกเพื่อให้แสดงสีปกติของภาพ -->
+            <img id="wtTrackImg" src="" class="img-fluid mx-auto rounded" style="max-height: 250px; width: 100%; object-fit: contain; background: rgba(0,0,0,0.2); padding: 10px;" alt="Layout">
+          </div>
+
+          <!-- 3. Action Button: ดูผลปีที่แล้ว -->
+          <div class="mt-4 pt-3">
+            <button type="button" class="btn-archive-hud" onclick="jumpToArchiveFromSchedule()">
+  <i class="fa-solid fa-chart-line"></i>
+  <span>ดูสถิติและผลการแข่งขันปีที่แล้ว (ARCHIVE)</span>
+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <div id="globalLoader" class="skeleton-wrapper hidden">
     <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
     <div class="skeleton-card"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line w-75"></div><div class="skeleton-line w-50"></div></div><div class="skeleton-score"></div></div>
