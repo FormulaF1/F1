@@ -793,8 +793,13 @@ function onCenterRaceChange() {
   const layoutWrapper = document.getElementById('rcTrackLayoutWrapper');
   const layoutImg = document.getElementById('rcTrackLayoutImg');
   if (layoutWrapper && layoutImg) {
-    if (m.trackLayoutImg && m.trackLayoutImg.trim() !== "") {
-      layoutImg.src = getDriveDirectLink(m.trackLayoutImg);
+    // ดึงรูปลิงก์จากตัวแปร MODAL_TRACK_IMAGES แทน ถ้าไม่มีค่อยไปหาใน Sheets
+    const trackLayoutSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && MODAL_TRACK_IMAGES[raceId]) 
+                           ? MODAL_TRACK_IMAGES[raceId] 
+                           : ((m.trackLayoutImg && m.trackLayoutImg.trim() !== "") ? getDriveDirectLink(m.trackLayoutImg) : '');
+                           
+    if (trackLayoutSrc) {
+      layoutImg.src = trackLayoutSrc;
       layoutWrapper.style.display = 'block';
     } else {
       layoutImg.src = '';
@@ -2391,7 +2396,7 @@ async function renderScheduleTab() {
   const now = new Date();
   let nextRaceId = null;
 
-  // 🎯 [เพิ่มใหม่] คัดกรองเอาเฉพาะแถวที่เป็น Main Race เพื่อไม่ให้การ์ดแสดงเบิ้ลกับแถว Sprint
+  // คัดกรองเอาเฉพาะแถวที่เป็น Main Race เพื่อไม่ให้การ์ดแสดงเบิ้ลกับแถว Sprint
   const weekendRaces = globalRaces.filter(r => r.id.includes('-MAIN') || r.type === 'Main');
 
   const upcomingRaces = weekendRaces.filter(r => r.deadline && new Date(r.deadline) > now);
@@ -2448,41 +2453,39 @@ async function renderScheduleTab() {
       else dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} ${monthNames[dtStart.getMonth()]} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
     }
 
-   const trackImgSrc = (race.media && race.media.trackLayoutImg) ? getDriveDirectLink(race.media.trackLayoutImg) : '';
-    const bgImgSrc = (race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj';
+    // 1. ดึงรูปสำหรับโชว์บน "การ์ดด้านหน้า"
+    const cardTrackImgSrc = (typeof CARD_TRACK_IMAGES !== 'undefined' && CARD_TRACK_IMAGES[race.id]) ? CARD_TRACK_IMAGES[race.id] : ''; 
     
-    // ดึงรูปโปสเตอร์จากคอลัมน์ I (ถ้าไม่ได้ใส่ไว้ ให้กลับไปใช้รูปปกสนาม bgImgSrc แทน)
-    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : bgImgSrc;
-    
-    // ผูก Event Onclick ส่ง posterImgSrc ไปแสดงใน Bottom Sheet
-    const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${posterImgSrc}', '${trackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
+    // 2. ดึงรูปสำหรับแสดง "ด้านใน (Modal)"
+    const modalTrackImgSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && MODAL_TRACK_IMAGES[race.id]) ? MODAL_TRACK_IMAGES[race.id] : ((race.media && race.media.trackLayoutImg) ? getDriveDirectLink(race.media.trackLayoutImg) : '');
 
+    // 3. ดึงรูปปกพื้นหลังสำรอง (bgImgSrc) และรูปโปสเตอร์ (posterImgSrc)
+    const bgImgSrc = (race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj';
+    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : bgImgSrc;
+
+    // 4. ประกาศ clickAction ส่ง modalTrackImgSrc สำหรับป๊อปอัปด้านใน
+    const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${posterImgSrc}', '${modalTrackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
+    
     if (isNext) {
       html += `
-        <div class="card border-0 rounded-4 overflow-hidden position-relative shadow-lg" ${clickAction} style="margin-bottom: 1px; min-height: 220px; cursor: pointer;">
+        <div class="card border-0 rounded-4 overflow-hidden position-relative shadow-lg" ${clickAction} style="margin-bottom: 6px; min-height: 220px; cursor: pointer;">
           
-          <!-- 1. รูปพื้นหลัง (ขยายความสูงเป็น 220px ให้ภาพใหญ่เต็มตา) -->
           <img src="${posterImgSrc}" class="position-absolute w-100 h-100" style="object-fit: cover; object-position: center; opacity: 1;" alt="${shortCountryName}" loading="lazy">
           
-          <!-- 2. เงาดำไล่ระดับ เพื่อให้ตัวหนังสือลอยเด่นแต่ไม่บังความสวยของรูป -->
           <div class="position-absolute w-100 h-100 z-1" style="background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 40%, transparent 60%, rgba(0,0,0,0.9) 100%); pointer-events: none;"></div>
 
-          <!-- 3. ป้าย NEXT สีแดงสด มุมขวาบน (ปรับดีไซน์ใหม่) -->
           <div class="position-absolute top-0 end-0 z-3 m-3">
             <span class="badge text-white px-3 py-2 shadow" style="background-color: #e10600; font-size: 0.85rem; letter-spacing: 1.5px; border-radius: 6px;">NEXT</span>
           </div>
 
-          <!-- 4. เนื้อหาด้านซ้ายบน: ธง + Round + ชื่อสนาม -->
           <div class="position-absolute top-0 start-0 p-3 z-2 w-75">
             <div class="d-flex align-items-center gap-2 mb-1">
               ${flagImgHtml}
               <span class="text-white fw-bold small" style="letter-spacing: 1px; text-transform: uppercase;">ROUND ${roundNum}</span>
             </div>
-            <!-- ขยายชื่อสนามให้ใหญ่ขึ้น (h3) ตามเรฟเฟอเรนซ์ -->
             <h3 class="text-white fw-bold f1-font mb-0 mt-1" style="text-shadow: 0 2px 8px rgba(0,0,0,0.9); line-height: 1.1; letter-spacing: 0.5px;">${shortCountryName}</h3>
           </div>
 
-          <!-- 5. วันที่ ย้ายมามุมซ้ายล่างสุด (สไตล์คลีนๆ ไร้ไอคอน) -->
           <div class="position-absolute bottom-0 start-0 p-3 z-2 w-100">
             <div class="text-white fw-bold f1-font" style="font-size: 1.1rem; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">
               ${dateDisplay}
@@ -2493,10 +2496,9 @@ async function renderScheduleTab() {
       `;
     } else {
       html += `
-        <div class="card mb-1 border-0 rounded-4 shadow-sm" ${clickAction} style="cursor: pointer; background-color: #1a1d24;">
+        <div class="card border-0 rounded-4 shadow-sm" ${clickAction} style="margin-bottom: 6px; cursor: pointer; background-color: #1a1d24;">
           <div class="card-body p-3">
             
-            <!-- 1. ธง + ชื่อสนาม (ปรับให้เล็กลงและอยู่บรรทัดเดียวกัน) -->
             <div class="d-flex align-items-center mb-1">
               <span class="text-secondary fw-bold small me-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">ROUND ${roundNum}</span>
             </div>
@@ -2505,22 +2507,16 @@ async function renderScheduleTab() {
               <h5 class="text-white fw-bold f1-font mb-0" style="font-size: 1.1rem; letter-spacing: 0.5px;">${shortCountryName}</h5>
             </div>
 
-            <!-- 2. ชื่อเต็มอย่างเป็นทางการ (สีเทา ขนาดเล็กสุด) -->
             <div class="text-secondary mb-3" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
               ${officialName}
             </div>
 
-            <!-- 3. วันที่ (ซ้าย) และ รูปผังสนาม (ขวา) ให้อยู่ระดับเดียวกัน -->
             <div class="d-flex justify-content-between align-items-end mt-2">
-              
-              <!-- ป้ายวันที่ (พื้นหลังขาว ตัวหนังสือดำ แบบในรูปอ้างอิง) -->
               <div class="bg-white text-dark fw-bold px-2 py-1 rounded" style="font-size: 0.8rem; letter-spacing: 1px;">
                 <i class="fa-solid fa-flag-checkered me-2 text-danger"></i>${dateDisplay}
               </div>
               
-              <!-- รูปผังสนาม (ถ้ามี) แสดงทางขวาล่าง -->
-              ${trackImgSrc ? `<img src="${trackImgSrc}" alt="Layout" loading="lazy" style="height: 40px; width: auto; filter: brightness(0) invert(1); opacity: 0.8;">` : ''}
-              
+              ${cardTrackImgSrc ? `<img src="${cardTrackImgSrc}" alt="Layout" loading="lazy" style="height: 50px; width: auto; opacity: 0.95;">` : ''}
             </div>
             
           </div>
