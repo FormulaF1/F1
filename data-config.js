@@ -2,6 +2,67 @@
 // 1. DATA CONFIGURATION (ข้อมูลทีม นักแข่ง และกติกาคะแนน)
 // =========================================================
 
+// ==========================================
+// 🏎️ ภาพผังสนามสำหรับแสดงบน "การ์ดด้านหน้า"
+// ==========================================
+const CARD_TRACK_IMAGES = {
+  // อิงลำดับ RaceID จาก Google Sheets ของคุณ
+  "R01-MAIN": "https://lh3.googleusercontent.com/d/1nZ3aAaJlxv0_nINUynI6rZxqCryTo8KT", // AUSTRALIA
+  "R02-MAIN": "https://lh3.googleusercontent.com/d/1mtfBQ5suSiQwSsVaWV4FH2uUcAt1Ztvr", // CHINA
+  "R03-MAIN": "https://lh3.googleusercontent.com/d/197Ewf6dTKJwz_kiUcmQFjtgJKUNWA9vx", // JAPAN
+  "R04-MAIN": "https://lh3.googleusercontent.com/d/1mvfgthczHMRAXIMqZgc6X1R07lilG3BJ", // USA Miami
+  "R05-MAIN": "https://lh3.googleusercontent.com/d/1ZqVELyCA9toegeAKunyppcOW5aUGuR3B", // Canada
+  "R06-MAIN": "https://lh3.googleusercontent.com/d/1J1hqxL2AQ7NUF4H-RtFrMXv2SRPOx3h4", // Monaco
+  "R07-MAIN": "https://lh3.googleusercontent.com/d/1_1l18JbX5U-MRzxDbom3f_ufdq9sMcC2", // Barcelona
+  "R08-MAIN": "https://lh3.googleusercontent.com/d/1MyQeNA1b7Vrn0y_wUuxh7iaap1LSuFYg", // Austria
+  "R09-MAIN": "https://lh3.googleusercontent.com/d/1aM4AR0G9-ybriMEmSwcazlxmakOER1cs", // Great Britain
+  "R10-MAIN": "https://lh3.googleusercontent.com/d/1yH_kzK6L-8-ojCKNJ1-ybsDFONy7Ske9", // Belgium
+  "R11-MAIN": "https://lh3.googleusercontent.com/d/1sy5x66miShEbCe7VGc5wHOdOa1qgGTUw", // Hungary
+  "R12-MAIN": "https://lh3.googleusercontent.com/d/1xgsDUE-8Y-pPQEcdrx2LS4vBY8r5jnKQ", // Netherlands
+  "R13-MAIN": "https://lh3.googleusercontent.com/d/1ALz9_A-BZkymsxcE49K76XWd9qMNCmqf", // Italy
+  "R14-MAIN": "https://lh3.googleusercontent.com/d/1gVq8ZdgKnq--cr_U24cqKZmUPF8yPsHX", // Spain Madrid
+  "R15-MAIN": "https://lh3.googleusercontent.com/d/1U4qz-X0hKnnO4sGwXBAV8dy1DwOZBWJB", // Azerbaijan
+  "R16-MAIN": "https://lh3.googleusercontent.com/d/10csiBp0vslRLvBYh2e6c6R0du9iRL7Zd", // BAHRAIN
+  "R17-MAIN": "https://lh3.googleusercontent.com/d/18VHC56eub4RCqt9E7mw7C2pqY9qYn9uq", // Singapore
+  "R18-MAIN": "https://lh3.googleusercontent.com/d/1ECmebbbv02w5AfnGiS6765e05dkz-nDz", // UNITED STATES Austin
+  "R19-MAIN": "https://lh3.googleusercontent.com/d/1GrWrCt4W98A3QvU8086vq52DPtVt_Gr2", // MEXICO
+  "R20-MAIN": "https://lh3.googleusercontent.com/d/10wnKjXZyoM-oPriG9I4YSlRrCpXK-9cI", // Brazil
+  "R21-MAIN": "https://lh3.googleusercontent.com/d/1qm7H-xpDXVs5k02DgVC8C3sXAaASPetB", // LAS VEGAS
+  "R22-MAIN": "https://lh3.googleusercontent.com/d/13mXHCXp9N8ZMNrjmfMGv8qIm8OFmdrw5", // Qatar
+  "R23-MAIN": "https://lh3.googleusercontent.com/d/18olKr6DY9nGi0Xk56PL1ajym4wgmYvps"  // ABU DHABI
+};
+
+// ==========================================
+// 🏎️ ภาพผังสนามสำหรับแสดง "ด้านใน (Modal)"
+// ==========================================
+const MODAL_TRACK_IMAGES = {
+  "R01-MAIN": "https://lh3.googleusercontent.com/d/1nuvwxedBwrQEy5qLApMn0KPpGyqZAI0e", // AUSTRALIA
+  "R02-MAIN": "https://lh3.googleusercontent.com/d/1h9xP9-DWa0z2XvkSVdwIp2vmK3aoLz-l", // CHINA
+  "R03-MAIN": "https://lh3.googleusercontent.com/d/1YCC3rTwKyni2hCfKEphrVainov1yhSZw", // JAPAN
+  "R04-MAIN": "https://lh3.googleusercontent.com/d/1AiBwQokqqaiglv1RZIejV4BTdU2UEjG4", // USA Miami
+  "R05-MAIN": "https://lh3.googleusercontent.com/d/1_MV_BRfyIlcE-LMqQQxQoR91XywMegW6", // Canada
+  "R06-MAIN": "https://lh3.googleusercontent.com/d/1AiBwQokqqaiglv1RZIejV4BTdU2UEjG4", // Monaco
+  "R07-MAIN": "https://lh3.googleusercontent.com/d/1-336BGJUrkbb8jQpI96Yojz0VOzMwU8M", // Barcelona
+  "R08-MAIN": "https://lh3.googleusercontent.com/d/1Wsxy8jxxPmSLz096qFt7j91Yudoi9ApO", // Austria
+  "R09-MAIN": "https://lh3.googleusercontent.com/d/1KBVXTk3KcTWE0MGTP8xAJCJmwR-F3gRD", // Great Britain
+  "R10-MAIN": "https://lh3.googleusercontent.com/d/1_OBjsUse0GW5XFAVkemmA-DHdrvgvCag", // Belgium
+  "R11-MAIN": "https://lh3.googleusercontent.com/d/1F9c1zGTaLJImzn0KK3LeAxdF0TyCz_Cf", // Hungary
+  "R12-MAIN": "https://lh3.googleusercontent.com/d/1S2mEJ4R3Q_RHNWvIGd3TFxWGFWYWzMQI", // Netherlands
+  "R13-MAIN": "https://lh3.googleusercontent.com/d/1FuhyH3JMTngzoLmBzoYuQzimi9rQin9E", // Italy
+  "R14-MAIN": "https://lh3.googleusercontent.com/d/1HTwxfGYojhA2nZIPPKs8OudXvG4UovXZ", // Spain Madrid
+  "R15-MAIN": "https://lh3.googleusercontent.com/d/1j0IcSIsaJh9wj89Wjv6UN8_k2R49P8N6", // Azerbaijan
+  "R16-MAIN": "https://lh3.googleusercontent.com/d/1C_2Idv5G4c9QzUdECt3RLezjaGt_avaO", // BAHRAIN
+  "R17-MAIN": "https://lh3.googleusercontent.com/d/1ALH8KMUVfSdJ1Ug4kLwiEa8zgoV_6_wj", // Singapore
+  "R18-MAIN": "https://lh3.googleusercontent.com/d/1ApDpCmPPOssIOFDwvGwar2iAVo9izxwG", // UNITED STATES Austin
+  "R19-MAIN": "https://lh3.googleusercontent.com/d/1bWX0Uub2Gv2AXRdaxjpbI9lkbXYXqKU_", // MEXICO
+  "R20-MAIN": "https://lh3.googleusercontent.com/d/1OiwSV3TUPnZD-7jxH0q_6FMfOaqXHbSU", // Brazil
+  "R21-MAIN": "https://lh3.googleusercontent.com/d/1xt_NJ0t8ZLIQ6wsWl6vzYH0ypvftYqFY", // LAS VEGAS
+  "R22-MAIN": "https://lh3.googleusercontent.com/d/1mOybYL49b_UVECVvHz1flrb0TV-xRS-b", // Qatar
+  "R23-MAIN": "https://lh3.googleusercontent.com/d/1m_gqNn6wlGf4El-QpWuUgxGo6CSBFrw9"  // ABU DHABI
+};
+
+// =========================================================
+
 const TEAM_LOGOS = { 
   "Ferrari": "https://lh3.googleusercontent.com/d/1vSyLK4voiZIq9-ctG7X5aAkdPezha1xu", 
   "Red Bull Racing": "https://lh3.googleusercontent.com/d/1pM-9Vo3HyaA-ZL5bjavA0D9nNYoClRAv", 
@@ -36,7 +97,7 @@ const TEAM_COLORS = {
 
 const TEAM_CARS = {
   "Ferrari": "https://lh3.googleusercontent.com/d/16fGNY2kTdnXIoDRjzkXmpbZwOn27xAAR",
-  "Red Bull Racing": "https://lh3.googleusercontent.com/d/1R686v8aHDPvewn-_aMgzLktRlwfICUfC",
+  "Red Bull Racing": "https://lh3.googleusercontent.com/d/1MUwr4Pi3TbBAKIYefrPpVcmfqdqfe-OW",
   "McLaren": "https://lh3.googleusercontent.com/d/1ZFP_jPxbzfRLknkRWj_GhEHRbkBK-l6g",
   "Mercedes": "https://lh3.googleusercontent.com/d/1y_4syJ21I8PbkQ5-O8VCnkKfNMO8_t0d",
   "Aston Martin": "https://lh3.googleusercontent.com/d/17A9qzj-jYzgwDwxZxsUyhj3aZZr9XHSn",
