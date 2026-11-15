@@ -2460,18 +2460,28 @@ async function renderScheduleTab() {
       else dateDisplay = `${String(dtStart.getDate()).padStart(2, '0')} ${monthNames[dtStart.getMonth()]} - ${String(dtEnd.getDate()).padStart(2, '0')} ${monthNames[dtEnd.getMonth()]}`;
     }
 
-    // 1. ดึงรูปสำหรับโชว์บน "การ์ดด้านหน้า"
+    // 1. ดึงรูปสำหรับโชว์บน "การ์ดด้านหน้า" (ผังสนามเล็ก)
     const cardTrackImgSrc = (typeof CARD_TRACK_IMAGES !== 'undefined' && CARD_TRACK_IMAGES[race.id]) ? CARD_TRACK_IMAGES[race.id] : ''; 
     
-    // 2. ดึงรูปสำหรับแสดง "ด้านใน (Modal)"
+    // 2. ดึงรูปสำหรับแสดง "ด้านใน Modal" (ผังสนามใหญ่)
     const modalTrackImgSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && MODAL_TRACK_IMAGES[race.id]) ? MODAL_TRACK_IMAGES[race.id] : ((race.media && race.media.trackLayoutImg) ? getDriveDirectLink(race.media.trackLayoutImg) : '');
 
-    // 3. ดึงรูปปกพื้นหลังสำรอง (bgImgSrc) และรูปโปสเตอร์ (posterImgSrc)
-    const bgImgSrc = (race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj';
-    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : bgImgSrc;
+    // 3. ดึงรูปรถ/รูปปก (Background Cover) เพื่อแสดงด้านใน Modal
+    // ลองหาใน SCHEDULE_COVER_IMAGES ก่อน ถ้าไม่มีค่อยไปดึงจาก Sheets (คอลัมน์ I) 
+    let coverImgSrc = 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj'; // รูป Default
+    if (typeof SCHEDULE_COVER_IMAGES !== 'undefined' && SCHEDULE_COVER_IMAGES[race.id]) {
+      coverImgSrc = SCHEDULE_COVER_IMAGES[race.id];
+    } else if (race.media && race.media.schedulePosterImg) {
+      coverImgSrc = getDriveDirectLink(race.media.schedulePosterImg);
+    } else if (race.media && race.media.trackImg) {
+      coverImgSrc = getDriveDirectLink(race.media.trackImg);
+    }
 
-    // 4. ประกาศ clickAction ส่ง modalTrackImgSrc สำหรับป๊อปอัปด้านใน
-    const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${posterImgSrc}', '${modalTrackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
+    // 4. ผูก Event เปิด Modal (ส่ง coverImgSrc เข้าไปเป็น bgImgSrc ของ Modal)
+    const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${coverImgSrc}', '${modalTrackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
+    
+    // สำหรับโชว์ในการ์ด NEXT ด้านนอกสุด
+    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : ((race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : coverImgSrc);
     
     if (isNext) {
       html += `
