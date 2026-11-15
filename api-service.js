@@ -195,7 +195,7 @@ function formatLapTime(seconds) {
   return mins > 0 ? `${mins}:${secs}` : `${secs}s`;
 }
 
-async function loadResultsSessionData(sessionKey, btnEl) {
+async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null) {
   if (btnEl) {
     document.querySelectorAll('#resultsSessionBtnGroup button').forEach(b => {
       b.classList.remove('active', 'text-white', 'border-white');
@@ -203,12 +203,12 @@ async function loadResultsSessionData(sessionKey, btnEl) {
     btnEl.classList.add('active', 'text-white', 'border-white');
   }
 
-  const list = document.getElementById('resultsSessionDataList');
+  // ใช้ targetContainer ถ้าส่งมา ถ้าไม่มีให้ไปลงหน้า Results หลัก
+  const list = targetContainer || document.getElementById('resultsSessionDataList');
   if (!list) return;
   list.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="text-secondary small f1-font">CALCULATING OFFICIAL CLASSIFICATION...</div></div>';
   
   try {
-    // ใช้ fetchOpenF1Cached เพื่อป้องกันปัญหา API Rate Limit (429) และสลับแท็บได้ทันที
     const [sessionData, drivers, laps, standingsRes] = await Promise.all([
       fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?session_key=${sessionKey}`),
       fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
