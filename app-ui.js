@@ -2385,7 +2385,7 @@ const COUNTRY_FLAGS = {
   "azerbaijan": "az", "singapore": "sg", 
   "united states": "us", "austin": "us", "las vegas": "us",
   "mexico": "mx", "mexican": "mx", "mexico city": "mx",
-  "brazil": "br", "brazilian": "br", "sao paulo": "br",
+  "brazil": "br", "brazilian": "br", "sao paulo": "br", "são paulo": "br",
   "qatar": "qa", "abu dhabi": "ae"
 };
 
