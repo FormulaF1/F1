@@ -2572,11 +2572,13 @@ async function openWeekendTimetable(raceId, countryName, officialName, flagCode,
         if (s.session_name.toLowerCase().includes('race')) typeClass = 'tl-race';
         else if (s.session_name.toLowerCase().includes('qualifying')) typeClass = 'tl-quali';
 
-        // 🎯 ตรวจสอบว่าเริ่มแข่งหรือยัง ถ้าเริ่มแล้วถึงให้กดกางได้
+        // 🎯 ตรวจสอบว่าเริ่มแข่งหรือยัง
         const now = new Date();
         const isStarted = dt <= now;
-        const clickAttr = isStarted ? `onclick="toggleSessionResults('${s.session_key}', this)" style="cursor: pointer;"` : `style="opacity: 0.6;"`;
-        const iconHtml = isStarted ? `<i class="fa-solid fa-chevron-down ms-2 text-info" style="font-size: 0.8rem;"></i>` : `<i class="fa-solid fa-lock ms-2 text-secondary" style="font-size: 0.8rem;" title="ยังไม่เริ่ม"></i>`;
+        
+        // ถ้าเริ่มแล้วให้คลิกได้และมีลูกศร ถ้ายังไม่เริ่มไม่ต้องลดสี (opacity) และไม่ต้องแสดงไอคอนใดๆ
+        const clickAttr = isStarted ? `onclick="toggleSessionResults('${s.session_key}', this)" style="cursor: pointer;"` : ``;
+        const iconHtml = isStarted ? `<i class="fa-solid fa-chevron-down ms-2 text-info" style="font-size: 0.8rem;"></i>` : ``;
 
         timelineHtml += `
           <div class="tl-item ${typeClass}" ${clickAttr}>
