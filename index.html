@@ -639,8 +639,8 @@
       <!-- Main Content -->
       <div class="modal-body p-0 position-relative d-flex flex-column justify-content-end overflow-auto" style="z-index: 1;">
         
-        <!-- ข้อมูลนักแข่ง (ชื่อ & ทีม) วางชิดซ้ายด้านบน -->
-        <div class="position-absolute top-0 start-0 w-100 px-4 z-2" style="margin-top: 80px;">
+        <!-- ข้อมูลนักแข่ง (ชื่อ & ทีม) วางชิดซ้ายด้านบน (อยู่ด้านหลังรูป) -->
+        <div class="position-absolute top-0 start-0 w-100 px-4 z-0" style="margin-top: 80px;">
           <div class="d-flex align-items-center gap-2 mb-1">
             <img id="heroTeamLogo" src="" alt="Team" class="hero-team-icon">
             <span class="text-white-50 small text-uppercase fw-bold" id="heroTeamName">Team</span>
@@ -649,8 +649,8 @@
           <h1 class="hero-driver-title text-white m-0 fw-bold" id="heroDriverLastName">LAST</h1>
         </div>
 
-        <!-- รูปนักแข่ง & เอฟเฟกต์กระจกเบลอ (ตั้ง z-index ต่ำลงเพื่อไม่ให้บังปุ่ม) -->
-        <div class="hero-driver-photo-container" style="z-index: 1;">
+        <!-- รูปนักแข่ง & เอฟเฟกต์กระจกเบลอ (อยู่ด้านหน้าตัวหนังสือ) -->
+        <div class="hero-driver-photo-container" style="z-index: 2; pointer-events: none;">
           <img id="heroDriverImg" src="" class="hero-driver-cutout" alt="Driver">
           <div class="hero-photo-blur"></div>
         </div>
