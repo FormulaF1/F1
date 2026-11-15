@@ -3,6 +3,36 @@
 // =========================================================
 
 // ==========================================
+// 📸 ภาพปกปฏิทินสำหรับแต่ละสนาม (Background Cover)
+// ==========================================
+const SCHEDULE_COVER_IMAGES = {
+  // อิงลำดับ RaceID จาก Google Sheets ของคุณ
+  "R01-MAIN": "https://lh3.googleusercontent.com/d/1rV9E-6RNj9IoZ-BGXNxwTIz7G5-ZSiE2", // AUSTRALIA
+  "R02-MAIN": "https://lh3.googleusercontent.com/d/1CEhrJeLVHL5r19hTzQpTbLAdK-IZ9emR", // CHINA
+  "R03-MAIN": "https://lh3.googleusercontent.com/d/17FP6cCL16JmgEtb3UjXOMB75HNbx6d0Q", // JAPAN
+  "R04-MAIN": "https://lh3.googleusercontent.com/d/1yUUV7f7LbYnj3beIQr1bezlFsjzAWXZD", // USA Miami
+  "R05-MAIN": "https://lh3.googleusercontent.com/d/1KVvue3DSDfvVluD8AofEUsJluWj9vGrA", // Canada
+  "R06-MAIN": "https://lh3.googleusercontent.com/d/1EUvmsOFeAi3EI6V403GKpsnLTGJBpZQ3", // Monaco
+  "R07-MAIN": "https://lh3.googleusercontent.com/d/1hy_cCR9CBZXu-hwc_6Sm05Ui9Kw9AlRn", // Barcelona
+  "R08-MAIN": "https://lh3.googleusercontent.com/d/13A2QvDllEhd74dl3W-dOL6z0Fww-XIvx", // Austria
+  "R09-MAIN": "https://lh3.googleusercontent.com/d/1hR6tuikpILiuBE1-NOF9aoeIKWDE62_Y", // Great Britain
+  "R10-MAIN": "https://lh3.googleusercontent.com/d/1iGG1rMiKag10cclWicW3DUgW3n5aWT4j", // Belgium
+  "R11-MAIN": "https://lh3.googleusercontent.com/d/1zxXvdWaLGsLy9Kr5pptDg4E3IPXtuIPQ", // Hungary
+  "R12-MAIN": "https://lh3.googleusercontent.com/d/1fOsEoI9G5XpLA4T-uAbp04UNtfHMd2UD", // Netherlands
+  "R13-MAIN": "https://lh3.googleusercontent.com/d/1EFi-1SEDjDYRb5suFYCoU0m7UEw_o-T4", // Italy
+  "R14-MAIN": "https://lh3.googleusercontent.com/d/1hy_cCR9CBZXu-hwc_6Sm05Ui9Kw9AlRn", // Spain Madrid
+  "R15-MAIN": "https://lh3.googleusercontent.com/d/1N1eDglnCb1YuVSP6-mlYewBvNGKnJFau", // Azerbaijan
+  "R16-MAIN": "https://lh3.googleusercontent.com/d/1yCWO_xBlN0p2iPsOnwndvaUTJHzKZrp8", // BAHRAIN
+  "R17-MAIN": "https://lh3.googleusercontent.com/d/1rN_KqhZnR0xJi-zD4Dz7dswo65v2B3u9", // Singapore
+  "R18-MAIN": "https://lh3.googleusercontent.com/d/1O-7jaPOGIBNpGbL9NmRXa36oEc0Bt7mN", // UNITED STATES Austin
+  "R19-MAIN": "https://lh3.googleusercontent.com/d/1ksox5ROYDvLGT2UcFrzfIvhvff1RfDJt", // MEXICO
+  "R20-MAIN": "https://lh3.googleusercontent.com/d/1xY9MU5UT5wWRRc42z1mRCSXSrr4FD06I", // Brazil
+  "R21-MAIN": "https://lh3.googleusercontent.com/d/17NpVXuRm9Es736Itrdk2GHR8nyfpSGPR", // LAS VEGAS
+  "R22-MAIN": "https://lh3.googleusercontent.com/d/1ovPeYW1UqNsoozYyeVWwInl4UJ1lqdo2", // Qatar
+  "R23-MAIN": "https://lh3.googleusercontent.com/d/1H4zW7SMWIYoETr2ODcZvA8JfcxJaWxbt"  // ABU DHABI
+};
+
+// ==========================================
 // 🏎️ ภาพผังสนามสำหรับแสดงบน "การ์ดด้านหน้า"
 // ==========================================
 const CARD_TRACK_IMAGES = {
