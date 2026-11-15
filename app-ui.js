@@ -2466,8 +2466,7 @@ async function renderScheduleTab() {
     // 2. ดึงรูปสำหรับแสดง "ด้านใน Modal" (ผังสนามใหญ่)
     const modalTrackImgSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && MODAL_TRACK_IMAGES[race.id]) ? MODAL_TRACK_IMAGES[race.id] : ((race.media && race.media.trackLayoutImg) ? getDriveDirectLink(race.media.trackLayoutImg) : '');
 
-    // 3. ดึงรูปรถ/รูปปก (Background Cover) เพื่อแสดงด้านใน Modal
-    // ลองหาใน SCHEDULE_COVER_IMAGES ก่อน ถ้าไม่มีค่อยไปดึงจาก Sheets (คอลัมน์ I) 
+    // 3. ดึงรูปรถ/รูปปก (Background Cover) 
     let coverImgSrc = 'https://lh3.googleusercontent.com/d/1UPM7PH4G6QD3W-9YFb_UTcLFsLWZ2fAj'; // รูป Default
     if (typeof SCHEDULE_COVER_IMAGES !== 'undefined' && SCHEDULE_COVER_IMAGES[race.id]) {
       coverImgSrc = SCHEDULE_COVER_IMAGES[race.id];
@@ -2477,11 +2476,11 @@ async function renderScheduleTab() {
       coverImgSrc = getDriveDirectLink(race.media.trackImg);
     }
 
-    // 4. ผูก Event เปิด Modal (ส่ง coverImgSrc เข้าไปเป็น bgImgSrc ของ Modal)
+    // 🎯 บังคับให้การ์ด NEXT ด้านหน้า ใช้รูปเดียวกับด้านใน Modal เป๊ะๆ 100%
+    const posterImgSrc = coverImgSrc;
+
+    // 4. ผูก Event เปิด Modal 
     const clickAction = `onclick="openWeekendTimetable('${race.id}', '${shortCountryName.replace(/'/g, "\\'")}', '${officialName.replace(/'/g, "\\'")}', '${flagCode}', '${coverImgSrc}', '${modalTrackImgSrc}', '${apiMatch ? apiMatch.meeting_key : ''}')"`;
-    
-    // สำหรับโชว์ในการ์ด NEXT ด้านนอกสุด
-    const posterImgSrc = (race.media && race.media.schedulePosterImg) ? getDriveDirectLink(race.media.schedulePosterImg) : ((race.media && race.media.trackImg) ? getDriveDirectLink(race.media.trackImg) : coverImgSrc);
     
     if (isNext) {
       html += `
