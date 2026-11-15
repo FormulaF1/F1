@@ -195,7 +195,7 @@ function formatLapTime(seconds) {
   return mins > 0 ? `${mins}:${secs}` : `${secs}s`;
 }
 
-async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null) {
+async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null, disableHeroClick = false) {
   if (btnEl) {
     document.querySelectorAll('#resultsSessionBtnGroup button').forEach(b => {
       b.classList.remove('active', 'text-white', 'border-white');
@@ -330,8 +330,13 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null)
     
     list.innerHTML = results.map((r, idx) => {
       const isFastestOverall = (r.bestLap === sessionFastestLap && sessionFastestLap !== Infinity);
+      
+      // 🎯 เช็คว่าให้ปิดการคลิกเปิด Hero Modal ไหม
+      const rowStyle = disableHeroClick ? '' : 'cursor:pointer;';
+      const rowClick = disableHeroClick ? '' : `onclick="openDriverHeroCustom(this, '${r.fullName.replace(/'/g, "\\'")}', '${r.seasonPoints}', '${r.seasonPos}')"`;
+      
       return `
-        <div class="f1-standings-row" style="cursor:pointer;" onclick="openDriverHeroCustom(this, '${r.fullName.replace(/'/g, "\\'")}', '${r.seasonPoints}', '${r.seasonPos}')">
+        <div class="f1-standings-row" style="${rowStyle}" ${rowClick}>
           <div class="col-pos" style="width: 12%;">${r.pos}</div>
           <div class="col-driver" style="width: 53%;">
             <img src="${r.headshot}" class="driver-headshot" alt="${r.shortName}" loading="lazy">
