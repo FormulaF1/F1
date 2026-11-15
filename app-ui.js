@@ -2419,10 +2419,17 @@ async function renderScheduleTab() {
     const isNext = race.id === nextRaceId;
     const roundNum = String(index + 1);
     
-    const apiMatch = openF1Meetings.find(m => 
-      race.name.toLowerCase().includes(m.meeting_name.toLowerCase()) || 
-      m.meeting_name.toLowerCase().includes(race.name.toLowerCase().replace(' grand prix', ''))
-    ) || openF1Meetings[index];
+    // แก้ไขการจับคู่ชื่อ API ให้ฉลาดขึ้น และยกเลิกการสุ่มดึง Index 
+    const gSheetName = race.name.toLowerCase();
+    const apiMatch = openF1Meetings.find(m => {
+      const apiName = m.meeting_name.toLowerCase();
+      return gSheetName.includes(apiName) || 
+             apiName.includes(gSheetName.replace(' grand prix', '')) ||
+             (gSheetName.includes('brazil') && apiName.includes('são paulo')) ||
+             (gSheetName.includes('brazil') && apiName.includes('sao paulo')) ||
+             (gSheetName.includes('emilia') && apiName.includes('imola')) ||
+             (gSheetName.includes('netherlands') && apiName.includes('dutch'));
+    });
 
     const officialName = apiMatch && apiMatch.meeting_official_name ? apiMatch.meeting_official_name : (race.type === 'Sprint' ? 'FORMULA 1 SPRINT WEEKEND 2026' : 'FORMULA 1 GRAND PRIX 2026');
     const shortCountryName = apiMatch && apiMatch.meeting_name ? apiMatch.meeting_name : race.name;
