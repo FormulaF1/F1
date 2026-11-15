@@ -2671,9 +2671,10 @@ async function toggleSessionResults(sessionKey, element) {
   // ถ้าเคยดึงข้อมูลแล้ว ไม่ต้องดึงซ้ำ (ลดภาระ API)
   if (resultContainer.innerHTML.trim() !== '') return;
 
-  // 3. เรียกใช้ฟังก์ชันดึงผลและ UI จากหน้า Results (ส่ง null แทนปุ่ม, และส่งกล่องเป้าหมายไป)
+  // 3. เรียกใช้ฟังก์ชันดึงผลและ UI จากหน้า Results
   if (typeof loadResultsSessionData === 'function') {
-    loadResultsSessionData(sessionKey, null, resultContainer);
+    // 🎯 ส่งค่า true ในพารามิเตอร์ที่ 4 (disableHeroClick) เพื่อปิดการกดเปิดหน้า Driver Hero ในปฏิทิน
+    loadResultsSessionData(sessionKey, null, resultContainer, true);
   } else {
     resultContainer.innerHTML = '<div class="text-center text-danger small py-3">ระบบเชื่อมต่อผลการแข่งขันไม่พร้อมใช้งาน</div>';
   }
