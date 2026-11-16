@@ -18,11 +18,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = event.request.url;
 
-  // 🎯 1. ข้ามการทำ Cache สำหรับ API และ Google Drive ทันที (ให้ Browser วิ่งตรง)
+  // 🎯 1. ข้ามการทำ Cache สำหรับ API เท่านั้น (อนุญาตให้แคชรูปจาก Google Drive ได้แล้ว)
   if (url.includes('api.openf1.org') || 
       url.includes('api.jolpi.ca') || 
-      url.includes('script.google.com') ||
-      url.includes('googleusercontent.com')) {
+      url.includes('script.google.com')) {
     return; // ปล่อยผ่าน ไม่ต้องใช้ event.respondWith
   }
 
