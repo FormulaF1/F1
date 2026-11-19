@@ -18,7 +18,7 @@ let globalLeaderboard = [];
 let globalPlayers = []; 
 let globalRaces = []; 
 let lastPendingList = []; 
-let currentActiveMedia = null;
+let currentArchiveMode = 'quali2025';
 let isRefreshing = false;
 let currentCenterMedia = null;
 let currentArchiveMedia = null;
@@ -104,17 +104,6 @@ window.onload = function() {
   document.querySelectorAll('.driver-opt').forEach(function(el) { el.innerHTML = optHtml; });
 
   initHeroHybridShowcaseUI();
-  buildDriverGrid();
-  loadData();
-  loadOpenF1Meetings();
-  loadLatestNews();
-  loadDriverStatsAPI();
-  updateRadioButtonVisibility();
-
-
-  const optHtml = '<option value="" disabled selected>-- เลือกนักแข่ง --</option>' + DRIVERS.map(function(d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
-  document.querySelectorAll('.driver-opt').forEach(function(el) { el.innerHTML = optHtml; });
-
   buildDriverGrid();
   loadData();
   loadOpenF1Meetings();
@@ -914,7 +903,7 @@ function switchArchiveMode(mode, skipHaptic) {
     if (headerTitle) headerTitle.innerHTML = '<i class="fa-solid fa-flag-checkered text-warning me-2"></i>OFFICIAL RACE CLASSIFICATION';
   }
 
-  const m = currentActiveMedia || {};
+    const m = currentArchiveMedia || {};
   const imgUrl = m[mode];
 
   if (imgUrl && imgUrl.trim() !== "") {
@@ -937,7 +926,7 @@ function switchArchiveMode(mode, skipHaptic) {
 }
 
 function openActiveArchivePreview() {
-  const m = currentActiveMedia || {};
+  const m = currentArchiveMedia || {};
   if (!m[currentArchiveMode] || m[currentArchiveMode].trim() === "") return;
   openMediaPreview2025(currentArchiveMode);
 }
@@ -2496,78 +2485,6 @@ function openDriverHero(fullName, rowEl, isSwiping) {
   } else {
     animateCountUp(heroPtsEl, pts, 600);
   }
-}
-
-    setTimeout(() => {
-      if (typeof animateCountUp === 'function' && heroPtsEl) {
-        animateCountUp(heroPtsEl, currentPts, 1800);
-      } else if (heroPtsEl) {
-        heroPtsEl.innerText = currentPts;
-      }
-    }, 150);
-  };
-
-  const gridInst = driverSelectorModalInstance || bootstrap.Modal.getInstance(gridModalEl);
-  if (gridModalEl && gridModalEl.classList.contains('show') && gridInst) {
-    gridModalEl.addEventListener('hidden.bs.modal', function onGridHidden() {
-      showHeroAndAnimate();
-    }, { once: true });
-    gridInst.hide();
-  } else {
-    showHeroAndAnimate();
-  }
-}
-
-function openDriverHero(fullName, rowEl) {
-  triggerHaptic();
-  const info = DRIVER_INFO[fullName];
-  if(!info) return;
-
-  const pts = rowEl.querySelector('.col-pts').innerText;
-  const pos = rowEl.querySelector('.col-pos').innerText;
-  const parts = fullName.split(' ');
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
-
-  document.getElementById('heroDriverFirstName').innerText = firstName;
-  document.getElementById('heroDriverLastName').innerText = lastName;
-  document.getElementById('heroTeamName').innerText = info.team;
-  document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
-  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
-  
-  const heroPtsEl = document.getElementById('heroPoints');
-  const heroPosEl = document.getElementById('heroPos');
-  if (heroPosEl) heroPosEl.innerText = 'P' + pos;
-
-  const standardStatsEl = document.getElementById('heroStandardStats');
-  const predictSectionEl = document.getElementById('heroPredictSection');
-  
-  if (standardStatsEl) {
-    standardStatsEl.style.display = 'block';
-    standardStatsEl.style.marginTop = "0px";
-    
-    if (heroPtsEl && heroPtsEl.parentElement) {
-      heroPtsEl.parentElement.style.fontSize = ""; 
-    }
-    if (heroPosEl) {
-      heroPosEl.style.fontSize = ""; 
-    }
-  }
-  
-  if (predictSectionEl) predictSectionEl.style.display = 'none';
-
-  if (heroPtsEl) heroPtsEl.innerText = "0"; 
-  
-  setTimeout(() => {
-    animateCountUp(heroPtsEl, pts, 2200); 
-  }, 10); 
-
-  document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
-
-  if (!window.driverHeroModalInstance) {
-    window.driverHeroModalInstance = new bootstrap.Modal(document.getElementById('driverHeroModal'));
-  }
-  window.driverHeroModalInstance.show();
 }
 
 // ==========================================
