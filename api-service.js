@@ -1,5 +1,5 @@
 // =========================================================
-// 2. API SERVICE & CACHING (การเชื่อมต่อฐานข้อมูลและ F1 API)
+// 2. API SERVICE & CACHING (การเชื่อมต่อฐานข้อมูลและ F1 API v2.0)
 // =========================================================
 
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwZ_VB9I7ClOgDpd8bDkaY09CzipETJMeQPDK6Qk6JYVNPdgfXA6ZrmXDG8gYsJ9I6u/exec";
@@ -7,31 +7,81 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwZ_VB9I7ClOgDpd8bD
 const apiCache = new Map();
 const pendingRequests = new Map();
 
-// ระบบแคชสำหรับ OpenF1 API เพื่อเพิ่มความเร็วและลดอาการหน่วง (เก็บข้อมูลไว้ในหน่วยความจำชั่วคราว 2 นาที)[cite: 1]
+// ระบบแคชและรวมคำขอซ้ำสำหรับ OpenF1 & Jolpica API เพื่อลดอาการหน่วงและกันติด Rate Limit (429)
 const openF1Cache = new Map();
-const OPENF1_CACHE_TTL = 120000; 
+const openF1Pending = new Map();
+const OPENF1_CACHE_TTL = 120000; // 2 นาที
 
-async function fetchOpenF1Cached(url) {
+const jolpicaCache = new Map();
+const JOLPICA_CACHE_TTL = 300000; // 5 นาที
+
+// Helper สำหรับตัดวรรณยุกต์พิเศษ (เช่น Pérez -> perez, Hülkenberg -> hulkenberg)
+function cleanTextForMatch(str) {
+  return String(str || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+// ดึงข้อมูลจาก OpenF1 แบบมี Cache + ป้องกันการแคชค่า Error + รวม Request ที่ยิงซ้ำพร้อมกัน
+async function fetchOpenF1Cached(url, customTtl = OPENF1_CACHE_TTL) {
   const now = Date.now();
   if (openF1Cache.has(url)) {
     const cached = openF1Cache.get(url);
-    if (now - cached.timestamp < OPENF1_CACHE_TTL) {
+    if (now - cached.timestamp < customTtl) {
+      return cached.data;
+    }
+  }
+
+  if (openF1Pending.has(url)) {
+    return openF1Pending.get(url);
+  }
+
+  const reqPromise = (async () => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`OpenF1 HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      openF1Cache.set(url, { data, timestamp: Date.now() });
+      return data;
+    } finally {
+      openF1Pending.delete(url);
+    }
+  })();
+
+  openF1Pending.set(url, reqPromise);
+  return reqPromise;
+}
+
+// ดึงข้อมูลจาก Jolpica API แบบมี Cache
+async function fetchJolpicaCached(url, forceRefresh = false) {
+  const now = Date.now();
+  if (!forceRefresh && jolpicaCache.has(url)) {
+    const cached = jolpicaCache.get(url);
+    if (now - cached.timestamp < JOLPICA_CACHE_TTL) {
       return cached.data;
     }
   }
 
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Jolpica HTTP ${response.status}`);
+  }
   const data = await response.json();
-  openF1Cache.set(url, { data, timestamp: now });
+  jolpicaCache.set(url, { data, timestamp: now });
   return data;
 }
 
+// เชื่อมต่อ Google Apps Script Backend
 async function callGAS(action, payload = {}, options = { useCache: false, ttl: 30000 }) {
   const cacheKey = action + "_" + JSON.stringify(payload);
 
   if (options.useCache && apiCache.has(cacheKey)) {
     const cached = apiCache.get(cacheKey);
-    if (Date.now() - cached.timestamp < options.ttl) {
+    if (Date.now() - cached.timestamp < (options.ttl || 30000)) {
       return cached.data;
     }
   }
@@ -40,9 +90,13 @@ async function callGAS(action, payload = {}, options = { useCache: false, ttl: 3
     return pendingRequests.get(cacheKey);
   }
 
+  // ขยายเวลา Timeout เป็น 30 วินาทีสำหรับ AI Race Engineer และงานคำนวณของ Admin
+  const isHeavyTask = action === "askRaceEngineer" || action === "saveResultAndCalculate" || action.startsWith("admin");
+  const timeoutMs = options.timeout || (isHeavyTask ? 30000 : 18000);
+
   const fetchPromise = (async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(GAS_API_URL, {
@@ -52,12 +106,26 @@ async function callGAS(action, payload = {}, options = { useCache: false, ttl: 3
         signal: controller.signal
       });
       clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`GAS HTTP ${response.status}`);
+      }
+
       const result = await response.json();
 
-      if (options.useCache) {
+      // ล้าง Cache หน้าเว็บอัตโนมัติเมื่อมีการอัปเดตข้อมูลสำคัญ
+      if (["submitPrediction", "registerPlayer", "saveResultAndCalculate", "adminUpdateRaceSettings", "adminSaveTrackMediaLinks"].includes(action)) {
+        apiCache.clear();
+      } else if (options.useCache && result && result.success !== false) {
         apiCache.set(cacheKey, { data: result, timestamp: Date.now() });
       }
+
       return result;
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        throw new Error('การเชื่อมต่อใช้เวลานานเกินกำหนด กรุณาลองใหม่อีกครั้ง');
+      }
+      throw err;
     } finally {
       clearTimeout(timeoutId);
       pendingRequests.delete(cacheKey);
@@ -68,100 +136,123 @@ async function callGAS(action, payload = {}, options = { useCache: false, ttl: 3
   return fetchPromise;
 }
 
-async function fetchF1Standings() {
+// ดึงตารางคะแนนนักแข่งโลก (WDC)
+async function fetchF1Standings(forceRefresh = false) {
   try {
-    const response = await fetch('https://api.jolpi.ca/ergast/f1/current/driverStandings.json');
-    const data = await response.json();
-    const standings = data.MRData.StandingsTable.StandingsLists[0].DriverStandings;
-    
+    const data = await fetchJolpicaCached('https://api.jolpi.ca/ergast/f1/current/driverStandings.json', forceRefresh);
+    const lists = data?.MRData?.StandingsTable?.StandingsLists;
+    if (!lists || lists.length === 0) return;
+
+    const standings = lists[0].DriverStandings || [];
     const container = document.getElementById('driverStandingsList') || document.querySelector('.f1-official-standings');
     if (!container) return;
-    const rows = container.querySelectorAll('.f1-standings-row');
-    const rowsArray = Array.from(rows);
+
+    const rowsArray = Array.from(container.querySelectorAll('.f1-standings-row'));
 
     standings.forEach(driverData => {
-      const apiFamilyName = driverData.Driver.familyName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const points = driverData.points;
-      const position = driverData.position;
+      const apiFamilyName = cleanTextForMatch(driverData?.Driver?.familyName);
+      if (!apiFamilyName) return;
+
+      const points = driverData.points || '0';
+      const position = driverData.position || driverData.positionText || '-';
 
       const targetRow = rowsArray.find(row => {
         const nameEl = row.querySelector('.driver-name');
         if (!nameEl) return false;
-        const htmlName = nameEl.innerText.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const htmlName = cleanTextForMatch(nameEl.innerText);
         return htmlName.includes(apiFamilyName);
       });
 
       if (targetRow) {
-        targetRow.querySelector('.col-pts').innerText = points;
-        targetRow.querySelector('.col-pos').innerText = position;
+        const ptsEl = targetRow.querySelector('.col-pts');
+        const posEl = targetRow.querySelector('.col-pos');
+        if (ptsEl) ptsEl.innerText = points;
+        if (posEl) posEl.innerText = position;
         targetRow.setAttribute('data-position', position);
       }
     });
 
     rowsArray.sort((a, b) => {
-      const posA = parseInt(a.getAttribute('data-position')) || 999;
-      const posB = parseInt(b.getAttribute('data-position')) || 999;
+      const posA = parseInt(a.getAttribute('data-position'), 10) || 999;
+      const posB = parseInt(b.getAttribute('data-position'), 10) || 999;
       return posA - posB;
     });
 
-    rowsArray.forEach(row => row.remove());
-    rowsArray.forEach(row => container.appendChild(row));
+    const fragment = document.createDocumentFragment();
+    rowsArray.forEach(row => fragment.appendChild(row));
+    container.appendChild(fragment);
   } catch (error) {
     console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูลนักแข่ง F1 API:', error);
   }
 }
 
-async function fetchF1TeamStandings() {
+// ดึงตารางคะแนนทีมผู้ผลิต (WCC)
+async function fetchF1TeamStandings(forceRefresh = false) {
   try {
-    const response = await fetch('https://api.jolpi.ca/ergast/f1/current/constructorStandings.json');
-    const data = await response.json();
-    const standings = data.MRData.StandingsTable.StandingsLists[0].ConstructorStandings;
-    
+    const data = await fetchJolpicaCached('https://api.jolpi.ca/ergast/f1/current/constructorStandings.json', forceRefresh);
+    const lists = data?.MRData?.StandingsTable?.StandingsLists;
+    if (!lists || lists.length === 0) return;
+
+    const standings = lists[0].ConstructorStandings || [];
     const container = document.getElementById('teamStandingsList') || document.querySelector('.f1-team-cards-container');
     if (!container) return;
+
     const rowsArray = Array.from(container.querySelectorAll('.team-card'));
 
     standings.forEach(teamData => {
-      const apiTeamId = teamData.Constructor.constructorId.toLowerCase(); 
-      const points = teamData.points;
-      const position = teamData.position;
+      const apiTeamId = cleanTextForMatch(teamData?.Constructor?.constructorId);
+      const apiTeamName = cleanTextForMatch(teamData?.Constructor?.name);
+      if (!apiTeamId) return;
+
+      const points = teamData.points || '0';
+      const position = teamData.position || teamData.positionText || '-';
 
       const targetRow = rowsArray.find(row => {
         const nameEl = row.querySelector('.team-name');
         if (!nameEl) return false;
-        const htmlName = nameEl.innerText.toLowerCase();
-        if (apiTeamId.includes('sauber') && htmlName === 'audi') return true;
-        return htmlName.includes(apiTeamId) || apiTeamId.includes(htmlName.split(' ')[0]);
+        const htmlName = cleanTextForMatch(nameEl.innerText);
+
+        // จับคู่ชื่อทีมพิเศษระหว่าง API กับชื่อปี 2026 ในแอป
+        if ((apiTeamId.includes('sauber') || apiTeamId.includes('audi')) && htmlName === 'audi') return true;
+        if ((apiTeamId === 'rb' || apiTeamId.includes('vcarb') || apiTeamName.includes('racing bulls')) && htmlName === 'vcarb') return true;
+        if (apiTeamId === 'red_bull' && htmlName.includes('red bull')) return true;
+        if (apiTeamId.includes('aston') && htmlName.includes('aston')) return true;
+
+        const firstWord = htmlName.split(' ')[0];
+        return htmlName.includes(apiTeamId) || (firstWord.length > 2 && apiTeamId.includes(firstWord));
       });
 
       if (targetRow) {
-        targetRow.querySelector('.col-pts').innerText = points;
-        targetRow.querySelector('.col-pos').innerText = position;
+        const ptsEl = targetRow.querySelector('.col-pts');
+        const posEl = targetRow.querySelector('.col-pos');
+        if (ptsEl) ptsEl.innerText = points;
+        if (posEl) posEl.innerText = position;
         targetRow.setAttribute('data-position', position);
       }
     });
 
     rowsArray.sort((a, b) => {
-      const posA = parseInt(a.getAttribute('data-position')) || 999;
-      const posB = parseInt(b.getAttribute('data-position')) || 999;
+      const posA = parseInt(a.getAttribute('data-position'), 10) || 999;
+      const posB = parseInt(b.getAttribute('data-position'), 10) || 999;
       return posA - posB;
     });
 
-    rowsArray.forEach(row => row.remove());
-    rowsArray.forEach(row => container.appendChild(row));
+    const fragment = document.createDocumentFragment();
+    rowsArray.forEach(row => fragment.appendChild(row));
+    container.appendChild(fragment);
   } catch (error) {
     console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูลคะแนนทีม:', error);
   }
 }
 
+// ดึงสภาพอากาศสดจากสนามล่าสุดผ่าน OpenF1
 async function fetchLiveWeather() {
   try {
-    // ใช้ฟังก์ชันแคช OpenF1 เพื่อดึงข้อมูลสภาพอากาศได้อย่างรวดเร็ว[cite: 1]
     const data = await fetchOpenF1Cached('https://api.openf1.org/v1/weather?session_key=latest');
 
-    if (data && data.length > 0) {
-      const latestWeather = data[data.length - 1]; 
-      const isRaining = latestWeather.rainfall > 0;
+    if (Array.isArray(data) && data.length > 0) {
+      const latestWeather = data[data.length - 1];
+      const isRaining = Number(latestWeather.rainfall) > 0;
       const weatherIcon = isRaining ? '🌧️' : '☀️';
 
       const weatherHtml = `
@@ -195,6 +286,32 @@ function formatLapTime(seconds) {
   return mins > 0 ? `${mins}:${secs}` : `${secs}s`;
 }
 
+// จับคู่ชื่อนักแข่งจาก API เข้ากับคีย์มาตรฐานใน DRIVER_INFO
+function resolveAppDriverName(apiDriver) {
+  if (!apiDriver || typeof DRIVER_INFO === 'undefined') {
+    return apiDriver?.full_name || 'Driver';
+  }
+  const apiLast = cleanTextForMatch(apiDriver.last_name);
+  const apiFull = cleanTextForMatch(apiDriver.full_name);
+
+  if (apiLast && apiLast.length >= 2) {
+    const matched = Object.keys(DRIVER_INFO).find(name => {
+      const cleanApp = cleanTextForMatch(name);
+      const appLast = cleanApp.split(' ').pop();
+      return cleanApp.includes(apiLast) || (appLast.length >= 2 && apiLast.includes(appLast));
+    });
+    if (matched) return matched;
+  }
+
+  if (apiFull && apiFull.length >= 3) {
+    const matchedFull = Object.keys(DRIVER_INFO).find(name => cleanTextForMatch(name) === apiFull);
+    if (matchedFull) return matchedFull;
+  }
+
+  return apiDriver.full_name || 'Driver';
+}
+
+// ดึงและคำนวณผลการแข่งขันแต่ละเซสชัน (Practice / Quali / Sprint / Race)
 async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null, disableHeroClick = false) {
   if (btnEl) {
     document.querySelectorAll('#resultsSessionBtnGroup button').forEach(b => {
@@ -203,29 +320,31 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
     btnEl.classList.add('active', 'text-white', 'border-white');
   }
 
-  // ใช้ targetContainer ถ้าส่งมา ถ้าไม่มีให้ไปลงหน้า Results หลัก
   const list = targetContainer || document.getElementById('resultsSessionDataList');
   if (!list) return;
   list.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="text-secondary small f1-font">CALCULATING OFFICIAL CLASSIFICATION...</div></div>';
-  
+
   try {
-    const [sessionData, drivers, laps, standingsRes] = await Promise.all([
+    const [sessionData, drivers, laps, standingsData] = await Promise.all([
       fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?session_key=${sessionKey}`),
       fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
       fetchOpenF1Cached(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`),
-      fetch('https://api.jolpi.ca/ergast/f1/current/driverStandings.json')
+      fetchJolpicaCached('https://api.jolpi.ca/ergast/f1/current/driverStandings.json').catch(() => null)
     ]);
-    
-    const standingsData = await standingsRes.json();
-    const sessionName = (sessionData[0] && sessionData[0].session_name) ? sessionData[0].session_name.toLowerCase() : '';
+
+    const sessionName = (Array.isArray(sessionData) && sessionData[0]?.session_name)
+      ? sessionData[0].session_name.toLowerCase()
+      : '';
     const isRace = sessionName === 'race' || sessionName === 'sprint';
-    
+
     const seasonStandings = {};
-    const standingsLists = standingsData.MRData?.StandingsTable?.StandingsLists;
+    const standingsLists = standingsData?.MRData?.StandingsTable?.StandingsLists;
     if (standingsLists && standingsLists.length > 0) {
       standingsLists[0].DriverStandings.forEach(ds => {
-        const familyName = ds.Driver.familyName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        seasonStandings[familyName] = { points: ds.points || '0', position: 'P' + ds.position };
+        const familyName = cleanTextForMatch(ds?.Driver?.familyName);
+        if (familyName) {
+          seasonStandings[familyName] = { points: ds.points || '0', position: 'P' + ds.position };
+        }
       });
     }
 
@@ -250,28 +369,42 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
         }
       });
     }
-    
-    let results = (Array.isArray(drivers) ? drivers : []).map(d => {
+
+    // กรองเลขรถซ้ำในเซสชันเดียวกัน (กรณี API ส่งข้อมูลซ้ำ)
+    const uniqueDriversMap = new Map();
+    (Array.isArray(drivers) ? drivers : []).forEach(d => {
+      if (d && d.driver_number !== undefined && !uniqueDriversMap.has(d.driver_number)) {
+        uniqueDriversMap.set(d.driver_number, d);
+      }
+    });
+
+    let results = Array.from(uniqueDriversMap.values()).map(d => {
       const dNum = d.driver_number;
       const stats = driverStats[dNum] || { maxLap: 0, bestLap: Infinity, finishTime: Infinity };
-      
-      const apiLastName = (d.last_name || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const appDriver = Object.keys(DRIVER_INFO).find(name => {
-        const cleanName = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return cleanName.includes(apiLastName) || apiLastName.includes(cleanName.split(' ').pop());
-      }) || d.full_name || 'Driver';
-      
-      const info = DRIVER_INFO[appDriver] || { team: d.team_name, color: d.team_colour ? `#${d.team_colour}` : '#888888', headshot: DEFAULT_DRIVER_IMG };
-      const shortName = (d.first_name ? d.first_name.charAt(0) + '. ' : '') + (d.last_name || d.full_name || '');
+      const appDriver = resolveAppDriverName(d);
+      const apiLastName = cleanTextForMatch(d.last_name || appDriver.split(' ').pop());
+
+      const fallbackColor = d.team_colour ? `#${String(d.team_colour).replace('#', '')}` : '#888888';
+      const info = (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[appDriver])
+        ? DRIVER_INFO[appDriver]
+        : { team: d.team_name || 'F1', color: fallbackColor, headshot: DEFAULT_DRIVER_IMG };
+
+      const nameParts = appDriver.split(' ');
+      const shortName = nameParts.length > 1
+        ? `${nameParts[0].charAt(0)}. ${nameParts.slice(1).join(' ')}`
+        : (d.name_acronym || appDriver);
+
       const seasonData = seasonStandings[apiLastName] || { points: '0', position: 'P-' };
+      const rawHeadshot = info.headshot || info.img || d.headshot_url || DEFAULT_DRIVER_IMG;
+      const headshotUrl = (typeof getDriveDirectLink === 'function') ? getDriveDirectLink(rawHeadshot) : rawHeadshot;
 
       return {
         driver_number: dNum,
         fullName: appDriver,
         shortName: shortName,
         team: info.team || d.team_name || 'F1',
-        color: info.color || (d.team_colour ? `#${d.team_colour}` : '#888888'),
-        headshot: getDriveDirectLink(info.headshot || info.img || DEFAULT_DRIVER_IMG),
+        color: info.color || fallbackColor,
+        headshot: headshotUrl,
         seasonPoints: seasonData.points,
         seasonPos: seasonData.position,
         maxLap: stats.maxLap,
@@ -285,14 +418,14 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
 
     if (isRace) {
       results.sort((a, b) => {
-        if (b.maxLap !== a.maxLap) return b.maxLap - a.maxLap; 
-        return a.finishTime - b.finishTime; 
+        if (b.maxLap !== a.maxLap) return b.maxLap - a.maxLap;
+        return a.finishTime - b.finishTime;
       });
-      
+
       if (results.length > 0) {
         const raceWinnerFinishTime = results[0].finishTime;
         const winnerLaps = results[0].maxLap;
-        
+
         results.forEach((r, idx) => {
           r.pos = idx + 1;
           if (idx === 0) {
@@ -301,7 +434,7 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
             const lapsBehind = winnerLaps - r.maxLap;
             r.timeGap = `+${lapsBehind} ${lapsBehind === 1 ? 'Lap' : 'Laps'}`;
           } else if (r.finishTime !== Infinity && raceWinnerFinishTime !== Infinity) {
-            const diffSec = (r.finishTime - raceWinnerFinishTime) / 1000;
+            const diffSec = Math.max(0, (r.finishTime - raceWinnerFinishTime) / 1000);
             r.timeGap = `+${diffSec.toFixed(3)}s`;
           } else {
             r.timeGap = 'DNF';
@@ -327,19 +460,21 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
       list.innerHTML = `<div class="text-center text-secondary py-4">ไม่มีข้อมูลเวลาในเซสชันนี้</div>`;
       return;
     }
-    
+
     list.innerHTML = results.map((r, idx) => {
       const isFastestOverall = (r.bestLap === sessionFastestLap && sessionFastestLap !== Infinity);
-      
-      // 🎯 เช็คว่าให้ปิดการคลิกเปิด Hero Modal ไหม
-      const rowStyle = disableHeroClick ? '' : 'cursor:pointer;';
-      const rowClick = disableHeroClick ? '' : `onclick="openDriverHeroCustom(this, '${r.fullName.replace(/'/g, "\\'")}', '${r.seasonPoints}', '${r.seasonPos}')"`;
-      
+      const canOpenHero = !disableHeroClick && typeof DRIVER_INFO !== 'undefined' && !!DRIVER_INFO[r.fullName];
+      const rowStyle = canOpenHero ? 'cursor:pointer;' : '';
+      const safeFullName = r.fullName.replace(/'/g, "\\'");
+      const rowClick = canOpenHero
+        ? `onclick="openDriverHeroCustom(this, '${safeFullName}', '${r.seasonPoints}', '${r.seasonPos}')"`
+        : '';
+
       return `
         <div class="f1-standings-row" style="${rowStyle}" ${rowClick}>
           <div class="col-pos" style="width: 12%;">${r.pos}</div>
           <div class="col-driver" style="width: 53%;">
-            <img src="${r.headshot}" class="driver-headshot" alt="${r.shortName}" loading="lazy">
+            <img src="${r.headshot}" class="driver-headshot" alt="${r.shortName}" loading="lazy" onerror="this.src='${DEFAULT_DRIVER_IMG}'">
             <div class="driver-info">
               <div class="driver-name text-white">${r.shortName} ${isFastestOverall ? '<i class="fa-solid fa-stopwatch text-purple ms-1" title="Fastest Lap"></i>' : ''}</div>
               <div class="team-name m-0" style="color: ${r.color};">${r.team}</div>
@@ -351,37 +486,36 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
         </div>
       `;
     }).join('');
-    
+
   } catch (error) {
     console.error('Session Results Error:', error);
-    list.innerHTML = '<div class="text-center text-danger py-4">พบปัญหาในการดึงข้อมูล OpenF1 API<br><span class="small text-secondary">กรุณาลองใหม่อีกครั้ง</span></div>';
+    list.innerHTML = '<div class="text-center text-danger py-4">พบปัญหาในการดึงข้อมูล OpenF1 API<br><span class="small text-secondary">กรุณารอสักครู่แล้วลองใหม่อีกครั้ง</span></div>';
   }
 }
 
+// เปิดหน้าการ์ดเต็มจอนักแข่งเมื่อคลิกจากหน้า Results
 function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
-  triggerHaptic();
-  const info = DRIVER_INFO[fullName];
+  if (typeof triggerHaptic === 'function') triggerHaptic();
+  const info = (typeof DRIVER_INFO !== 'undefined') ? DRIVER_INFO[fullName] : null;
   if (!info) return;
 
-  // ซ่อนปุ่มวิทยุขณะเปิด Hero Modal
   const radioBtn = document.getElementById('btnTeamRadio');
   if (radioBtn) radioBtn.style.setProperty('display', 'none', 'important');
 
-  const parts = fullName.split(' ');
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
+  const parts = fullName.trim().split(' ');
+  const firstName = parts[0] || '';
+  const lastName = parts.slice(1).join(' ') || '';
 
   document.getElementById('heroDriverFirstName').innerText = firstName;
   document.getElementById('heroDriverLastName').innerText = lastName;
   document.getElementById('heroTeamName').innerText = info.team;
   document.getElementById('heroTeamLogo').src = getDriveDirectLink(TEAM_LOGOS[info.team] || '');
-  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img); 
-  
+  document.getElementById('heroDriverImg').src = getDriveDirectLink(info.heroImg || info.img);
+
   const heroPtsEl = document.getElementById('heroPoints');
   const heroPosEl = document.getElementById('heroPos');
   if (heroPosEl) heroPosEl.innerText = championshipPos;
 
-  // รีเซ็ต Layout ให้กลับเป็นโหมดดูสถิติมาตรฐาน และซ่อนโซนทายผล
   const standardStatsEl = document.getElementById('heroStandardStats');
   const predictSectionEl = document.getElementById('heroPredictSection');
   if (standardStatsEl) {
@@ -392,10 +526,14 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   }
   if (predictSectionEl) predictSectionEl.style.display = 'none';
 
-  if (heroPtsEl) heroPtsEl.innerText = "0"; 
+  if (heroPtsEl) heroPtsEl.innerText = "0";
   setTimeout(() => {
-    animateCountUp(heroPtsEl, points, 2200); 
-  }, 10); 
+    if (typeof animateCountUp === 'function') {
+      animateCountUp(heroPtsEl, points, 1800);
+    } else if (heroPtsEl) {
+      heroPtsEl.innerText = points;
+    }
+  }, 30);
 
   document.getElementById('heroBgColor').style.background = `linear-gradient(to bottom, #0a0e1c 0%, ${info.color}40 15%, #0a0e1c 65%)`;
 
@@ -404,40 +542,34 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   }
   window.driverHeroModalInstance.show();
 }
+
 // =========================================================
-// ฟังก์ชันสำหรับหน้า TELEMETRY (ดึงเวลา Fastest Sector และ Speed Trap)
+// ฟังก์ชันสำหรับหน้า TELEMETRY (ดึงเวลา Fastest Sector และ Speed Trap แบบขนานพร้อม Cache)
 // =========================================================
 async function loadTelemetryHUD(sessionKey = 'latest') {
   try {
-    // 1. ดึงข้อมูลนักแข่งมาเพื่อทำ Mapping (เปลี่ยน driver_number เป็นชื่อ)
-    const driverRes = await fetch(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`);
-    const drivers = await driverRes.json();
+    const [drivers, laps] = await Promise.all([
+      fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
+      fetchOpenF1Cached(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`)
+    ]);
+
+    if (!Array.isArray(drivers) || !Array.isArray(laps)) return;
+
     const driverMap = {};
-    
     drivers.forEach(d => {
-      let driverColor = '#888888'; // สีเทาเริ่มต้น
-      
-      if (typeof DRIVER_INFO !== 'undefined') {
-        const lastNameAPI = (d.last_name || '').toLowerCase();
-        
-        for (const [fullName, info] of Object.entries(DRIVER_INFO)) {
-          // 🎯 แก้ปัญหา: ค้นหาด้วยนามสกุลแบบไม่สนตัวพิมพ์เล็ก-ใหญ่
-          if (fullName.toLowerCase().includes(lastNameAPI)) {
-            driverColor = info.color;
-            break;
-          }
-        }
+      if (!d || d.driver_number === undefined) return;
+      let driverColor = d.team_colour ? `#${String(d.team_colour).replace('#', '')}` : '#888888';
+
+      const matchedFullName = resolveAppDriverName(d);
+      if (typeof DRIVER_INFO !== 'undefined' && DRIVER_INFO[matchedFullName]) {
+        driverColor = DRIVER_INFO[matchedFullName].color;
       }
-      
+
       driverMap[d.driver_number] = {
         name: d.name_acronym || (d.last_name ? d.last_name.substring(0, 3).toUpperCase() : '---'),
         color: driverColor
       };
     });
-
-    // 2. ดึงข้อมูล Laps เพื่อหา Sector ที่เร็วที่สุด และ Speed Trap
-    const lapsRes = await fetch(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`);
-    const laps = await lapsRes.json();
 
     let bestS1 = { time: Infinity, driverNum: null };
     let bestS2 = { time: Infinity, driverNum: null };
@@ -445,35 +577,31 @@ async function loadTelemetryHUD(sessionKey = 'latest') {
     let bestSpeed = { speed: 0, driverNum: null };
 
     laps.forEach(lap => {
-      if (lap.duration_sector_1 && lap.duration_sector_1 < bestS1.time) { 
-        bestS1 = { time: lap.duration_sector_1, driverNum: lap.driver_number }; 
+      if (lap.duration_sector_1 > 0 && lap.duration_sector_1 < bestS1.time) {
+        bestS1 = { time: lap.duration_sector_1, driverNum: lap.driver_number };
       }
-      if (lap.duration_sector_2 && lap.duration_sector_2 < bestS2.time) { 
-        bestS2 = { time: lap.duration_sector_2, driverNum: lap.driver_number }; 
+      if (lap.duration_sector_2 > 0 && lap.duration_sector_2 < bestS2.time) {
+        bestS2 = { time: lap.duration_sector_2, driverNum: lap.driver_number };
       }
-      if (lap.duration_sector_3 && lap.duration_sector_3 < bestS3.time) { 
-        bestS3 = { time: lap.duration_sector_3, driverNum: lap.driver_number }; 
+      if (lap.duration_sector_3 > 0 && lap.duration_sector_3 < bestS3.time) {
+        bestS3 = { time: lap.duration_sector_3, driverNum: lap.driver_number };
       }
-      if (lap.st_speed && lap.st_speed > bestSpeed.speed) { 
-        bestSpeed = { speed: lap.st_speed, driverNum: lap.driver_number }; 
+      if (lap.st_speed > 0 && lap.st_speed > bestSpeed.speed) {
+        bestSpeed = { speed: lap.st_speed, driverNum: lap.driver_number };
       }
     });
 
-    // 3. ฟังก์ชันอัปเดตลง UI โดยเจาะจงเฉพาะ .driver-tag และ .sector-time
     const updateUI = (elementId, data, isSpeed = false) => {
       const parentEl = document.getElementById(elementId);
       if (!parentEl || !data.driverNum) return;
 
       const driver = driverMap[data.driverNum] || { name: '---', color: '#888888' };
-
-      // อัปเดตชื่อและสีทีม
       const tagEl = parentEl.querySelector('.driver-tag');
       if (tagEl) {
         tagEl.innerText = driver.name;
         tagEl.style.setProperty('--team-color', driver.color);
       }
 
-      // อัปเดตตัวเลขเวลา หรือ ความเร็ว
       const valEl = parentEl.querySelector(isSpeed ? '.speed-val' : '.sector-time');
       if (valEl) {
         if (isSpeed) {
@@ -484,7 +612,6 @@ async function loadTelemetryHUD(sessionKey = 'latest') {
       }
     };
 
-    // 4. สั่งรันการอัปเดตแต่ละกล่อง
     updateUI('fastestSec1', bestS1);
     updateUI('fastestSec2', bestS2);
     updateUI('fastestSec3', bestS3);
