@@ -1,9 +1,13 @@
 {
+  "id": "./index.html",
   "name": "F1 Predictor 2026",
   "short_name": "F1 Predictor",
   "description": "2026 OFFICIAL FANTASY LEAGUE",
+  "lang": "th",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0d0e12",
   "theme_color": "#e10600",
   "icons": [
@@ -11,13 +15,25 @@
       "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.postimg.cc/m2PCzCRh/App-Formula-1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
