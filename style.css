@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
 :root { 
   --f1-red: #e10600; 
   --f1-dark-red: #9e0400; 
@@ -1643,7 +1642,7 @@ body {
   top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
   transform: translateX(-100%);
-  animation: shimmer 1.5s infinite;
+  animation: skeletonSweep 1.5s infinite;
 }
 
 .skeleton-avatar {
@@ -1675,7 +1674,7 @@ body {
   border-radius: 6px;
 }
 
-@keyframes shimmer {
+@keyframes skeletonSweep {
   100% { transform: translateX(100%); }
 }
 /* =========================================================
@@ -2753,104 +2752,6 @@ body {
   color: #cbd5e1;
   font-weight: 600;
 }
-/* =========================================================
-   UX/UI UPGRADE: PLAYER CAREER STATS (SUPER LICENSE)
-   ========================================================= */
-
-.stats-super-license {
-  position: relative;
-  width: 100%;
-}
-
-.stats-super-license::before {
-  content: '';
-  position: absolute;
-  top: -20px; left: 50%;
-  transform: translateX(-50%);
-  width: 120%; height: 150px;
-  background: radial-gradient(circle at top, var(--team-color) 0%, transparent 60%);
-  opacity: 0.15;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sl-header {
-  position: relative;
-  z-index: 1;
-  background: linear-gradient(135deg, rgba(20, 22, 28, 0.8) 0%, rgba(10, 12, 16, 0.95) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 4px solid var(--team-color);
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-}
-
-.sl-avatar {
-  width: 48px;
-  height: 48px;
-  background: #000;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
-}
-
-.sl-avatar img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
-
-.sl-info {
-  flex-grow: 1;
-}
-
-.sl-name {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-
-.sl-team {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.sl-rank {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.sl-rank-lbl {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 0.55rem;
-  color: #94a3b8;
-  letter-spacing: 1px;
-}
-
-.sl-rank-val {
-  font-family: 'Titillium Web', sans-serif;
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #fff;
-  line-height: 1;
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
-}
 
 /* Telemetry Bento Box */
 .telemetry-grid {
@@ -3260,23 +3161,21 @@ body {
    F1 OFFICIAL STYLE FLOATING NAV (CAPSULE GLASSMORPHISM)
    ========================================================= */
 
-/* 1. ปรับทรงกล่องให้เป็นแคปซูลโค้งมน (border-radius: 50px) และเป็นกระจกฝ้าใส */
 .f1-nav-tabs {
   position: fixed !important;
-  bottom: 25px !important; 
+  bottom: max(18px, env(safe-area-inset-bottom)) !important; 
   left: 50% !important;
   transform: translateX(-50%) !important;
   width: 94% !important; 
   max-width: 480px !important;
   
-  /* ปรับความใสได้ตรงเลขตัวสุดท้าย (ยิ่งใกล้ยิ่ง 0 ยิ่งใส) */
-  background: rgba(50, 55, 65, 0.03) !important; 
-  backdrop-filter: blur(5px) saturate(130%) !important;
-  -webkit-backdrop-filter: blur(7px) saturate(130%) !important;
+  background: rgba(15, 18, 26, 0.72) !important; 
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
   
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: 50px !important; /* ⬅️ ทรงแคปซูล */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 50px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75) !important;
   padding: 12px 10px 10px 10px !important;
   z-index: 1050 !important;
   justify-content: space-between !important;
