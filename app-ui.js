@@ -2050,7 +2050,7 @@ async function loadDriverStatsAPI() {
   }
 }
 
-// 1. สร้างปุ่มลูกศรซ้าย-ขวา, ระบบปัดนิ้ว (Swipe) และแผงปุ่มเหมาสล็อต P1-FL อัตโนมัติ
+// 1. ระบบปัดนิ้วซ้าย-ขวา (Touch Swipe) แบบไร้ปุ่มรกตา สำหรับเลื่อนเทียบนักแข่ง
 function initHeroHybridShowcaseUI() {
   const heroModalEl = document.getElementById('driverHeroModal');
   if (!heroModalEl) return;
@@ -2058,46 +2058,15 @@ function initHeroHybridShowcaseUI() {
   if (!document.getElementById('hybridShowcaseInlineStyles')) {
     const styleEl = document.createElement('style');
     styleEl.id = 'hybridShowcaseInlineStyles';
-    styleEl.textContent = [
-      '.hero-nav-arrow { position: absolute; top: 42%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(13, 16, 26, 0.65); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.18); color: #ffffff; display: flex; align-items: center; justify-content: center; z-index: 15; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.45); }',
-      '.hero-nav-arrow:active { transform: translateY(-50%) scale(0.9); background: #e10600; border-color: #e10600; }',
-      '.hero-nav-prev { left: 12px; }',
-      '.hero-nav-next { right: 12px; }',
-      '.hero-multi-slot-wrap { background: rgba(10, 14, 24, 0.82); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 10px; margin-bottom: 10px; }',
-      '.hero-multi-slot-lbl { font-family: "Rajdhani", "Kanit", sans-serif; font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.8px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }',
-      '.hero-slot-pills { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }',
-      '.hero-slot-pills.sprint-mode { grid-template-columns: repeat(4, 1fr); }',
-      '.hero-slot-pill-btn { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14); color: #cbd5e1; border-radius: 8px; padding: 7px 2px; font-family: "Rajdhani", sans-serif; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; transition: all 0.18s ease; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }',
-      '.hero-slot-pill-btn .sub-owner { font-family: "Kanit", sans-serif; font-size: 0.58rem; font-weight: 400; color: #64748b; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 3px; }',
-      '.hero-slot-pill-btn.active-assigned { background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.18)); border-color: #10b981; color: #ffffff; box-shadow: 0 0 12px rgba(16, 185, 129, 0.35); }',
-      '.hero-slot-pill-btn.active-assigned .sub-owner { color: #6ee7b7; font-weight: 600; }',
-      '.hero-slot-pill-btn.active-fl { background: linear-gradient(135deg, rgba(168, 85, 247, 0.32), rgba(126, 34, 206, 0.2)); border-color: #a855f7; color: #ffffff; box-shadow: 0 0 12px rgba(168, 85, 247, 0.35); }',
-      '.hero-slot-pill-btn.active-fl .sub-owner { color: #d8b4fe; font-weight: 600; }',
-      '.hero-slot-pill-btn.target-focus:not(.active-assigned):not(.active-fl) { border-color: #f59e0b; box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.4); }',
-      '.hero-driver-switch-anim { animation: heroFadeSlide 0.22s cubic-bezier(0.22, 1, 0.36, 1); }',
-      '@keyframes heroFadeSlide { from { opacity: 0.35; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }'
-    ].join('\n');
+    styleEl.textContent =
+      '.hero-driver-switch-anim { animation: heroFadeSlide 0.22s cubic-bezier(0.22, 1, 0.36, 1); }\n' +
+      '@keyframes heroFadeSlide { from { opacity: 0.35; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }';
     document.head.appendChild(styleEl);
   }
 
   const modalBody = heroModalEl.querySelector('.modal-body');
-  if (modalBody && !document.getElementById('btnHeroPrevDriver')) {
-    const prevBtn = document.createElement('button');
-    prevBtn.type = 'button';
-    prevBtn.id = 'btnHeroPrevDriver';
-    prevBtn.className = 'hero-nav-arrow hero-nav-prev';
-    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-    prevBtn.onclick = function (e) { e.stopPropagation(); navigateHeroDriver(-1); };
-
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.id = 'btnHeroNextDriver';
-    nextBtn.className = 'hero-nav-arrow hero-nav-next';
-    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-    nextBtn.onclick = function (e) { e.stopPropagation(); navigateHeroDriver(1); };
-
-    modalBody.appendChild(prevBtn);
-    modalBody.appendChild(nextBtn);
+  if (modalBody && !modalBody.dataset.swipeBound) {
+    modalBody.dataset.swipeBound = '1';
 
     let touchStartX = 0;
     let touchStartY = 0;
@@ -2117,21 +2086,6 @@ function initHeroHybridShowcaseUI() {
         else navigateHeroDriver(-1);
       }
     }, { passive: true });
-  }
-
-  const predictSectionEl = document.getElementById('heroPredictSection');
-  const confirmBtn = document.getElementById('btnConfirmHeroPick');
-  if (predictSectionEl && confirmBtn && !document.getElementById('heroMultiSlotBar')) {
-    const multiBar = document.createElement('div');
-    multiBar.id = 'heroMultiSlotBar';
-    multiBar.className = 'hero-multi-slot-wrap';
-    multiBar.innerHTML =
-      '<div class="hero-multi-slot-lbl">' +
-        '<span><i class="fa-solid fa-layer-group text-warning me-1"></i>QUICK ASSIGN (แตะดักได้หลายอันดับ)</span>' +
-        '<span class="text-info" style="font-size:0.68rem;"><i class="fa-solid fa-arrows-left-right me-1"></i>ปัดเทียบได้</span>' +
-      '</div>' +
-      '<div class="hero-slot-pills" id="heroSlotPillsContainer"></div>';
-    confirmBtn.parentElement.insertBefore(multiBar, confirmBtn);
   }
 
   document.addEventListener('keydown', function (e) {
@@ -2176,88 +2130,7 @@ function navigateHeroDriver(direction) {
   }
 }
 
-function renderHeroMultiSlotBar(driverName) {
-  const container = document.getElementById('heroSlotPillsContainer');
-  if (!container) return;
-
-  const flWrapper = document.getElementById('flWrapper');
-  const isSprint = flWrapper && flWrapper.style.display === 'none';
-  container.className = isSprint ? 'hero-slot-pills sprint-mode' : 'hero-slot-pills';
-
-  const slots = [
-    { id: 'pos1', label: 'P1' },
-    { id: 'pos2', label: 'P2' },
-    { id: 'pos3', label: 'P3' },
-    { id: 'pos4', label: 'P4' }
-  ];
-  if (!isSprint) slots.push({ id: 'posFL', label: '⚡FL' });
-
-  const encodedDriver = encodeURIComponent(driverName);
-  container.innerHTML = slots.map(function (s) {
-    const selEl = document.getElementById(s.id);
-    const assignedVal = selEl ? selEl.value : '';
-    const isThisDriver = assignedVal === driverName;
-    const isTargetSlot = currentSelectingSlot === s.id;
-
-    let activeClass = '';
-    if (isThisDriver) activeClass = (s.id === 'posFL') ? 'active-fl' : 'active-assigned';
-    else if (isTargetSlot) activeClass = 'target-focus';
-
-    const ownerShort = isThisDriver ? '✓ เลือกแล้ว' : (assignedVal ? getShortDriverName(assignedVal) : 'ว่าง');
-    return '<button type="button" class="hero-slot-pill-btn ' + activeClass + '" onclick="toggleHeroSlotAssignment(\'' + s.id + '\', decodeURIComponent(\'' + encodedDriver + '\'))">' +
-      '<span>' + s.label + '</span>' +
-      '<span class="sub-owner">' + ownerShort + '</span>' +
-      '</button>';
-  }).join('');
-
-  updateHeroPrimaryButtonLabel(driverName);
-}
-
-// ปลดล็อกให้แตะดักนักแข่งคนเดิมซ้ำได้ทุกช่องอิสระ (แตะซ้ำช่องเดิม = ยกเลิกเฉพาะช่องนั้น)
-function toggleHeroSlotAssignment(slotId, driverName) {
-  triggerHaptic();
-  const selectEl = document.getElementById(slotId);
-  if (!selectEl) return;
-
-  if (selectEl.value === driverName) {
-    selectEl.value = '';
-    updateCardUI(slotId, '');
-  } else {
-    selectEl.value = driverName;
-    updateCardUI(slotId, driverName);
-  }
-
-  refreshDriverGridBadges();
-  renderHeroMultiSlotBar(driverName);
-}
-
-function updateHeroPrimaryButtonLabel(driverName) {
-  const btn = document.getElementById('btnConfirmHeroPick');
-  if (!btn || !currentSelectingSlot) return;
-
-  const slotLabels = { 'pos1': 'P1', 'pos2': 'P2', 'pos3': 'P3', 'pos4': 'P4', 'posFL': 'FASTEST LAP' };
-  const targetSel = document.getElementById(currentSelectingSlot);
-  const alreadyInTarget = targetSel && targetSel.value === driverName;
-
-  const flWrapper = document.getElementById('flWrapper');
-  const isSprint = flWrapper && flWrapper.style.display === 'none';
-  const activeSlots = isSprint ? ['pos1', 'pos2', 'pos3', 'pos4'] : ['pos1', 'pos2', 'pos3', 'pos4', 'posFL'];
-  const emptyCount = activeSlots.filter(function (id) {
-    const el = document.getElementById(id);
-    return !el || !el.value;
-  }).length;
-
-  if (alreadyInTarget && emptyCount === 0) {
-    btn.innerHTML = '<i class="fa-solid fa-flag-checkered me-2"></i>ยืนยันโพยครบทุกช่อง (DONE)';
-  } else if (alreadyInTarget) {
-    btn.innerHTML = '<i class="fa-solid fa-forward-step me-2"></i>ไปเลือกช่องถัดไป (NEXT SLOT)';
-  } else {
-    const lbl = slotLabels[currentSelectingSlot] || '';
-    btn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i>SELECT FOR <span id="lblHeroSlot">' + lbl + '</span>';
-  }
-}
-
-// 2. กราฟเรดาร์แบบ Morph เส้นกราฟเมื่อปัดซ้าย-ขวา
+// 2. กราฟเรดาร์แบบเดิมเป๊ะ 100% พร้อมขยับเส้นกราฟนุ่มนวลเวลาปัดเทียบนักแข่ง
 function renderDriverRadar(fullName, teamColor) {
   const canvasEl = document.getElementById('driverRadarChart');
   if (!canvasEl) return;
@@ -2302,7 +2175,6 @@ function renderDriverRadar(fullName, teamColor) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 350 },
       scales: {
         r: {
           angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
@@ -2331,7 +2203,7 @@ function renderDriverRadar(fullName, teamColor) {
   });
 }
 
-// 3. เปิดหน้า Hero ซ้อนทับทันที (Zero-Lag) ไม่สั่งพับเก็บ Bottom Sheet ด้านหลัง
+// 3. Clean Editorial Hero (Layout แต้มและปุ่มเหลืองแบบเดิมเป๊ะ + สลับหน้าไว Zero-Lag + ทายซ้ำได้ทุกช่อง)
 function previewDriverBeforeSelect(fullName, isSwiping) {
   if (!isSwiping) triggerHaptic();
 
@@ -2395,15 +2267,21 @@ function previewDriverBeforeSelect(fullName, isSwiping) {
   if (predictSectionEl) predictSectionEl.style.display = 'block';
 
   renderDriverRadar(fullName, info.color);
-  renderHeroMultiSlotBar(fullName);
 
   const btn = document.getElementById('btnConfirmHeroPick');
-  if (btn && currentSelectingSlot) {
-    btn.onclick = function() {
-      const targetSel = document.getElementById(currentSelectingSlot);
-      const alreadyAssignedInTarget = targetSel && targetSel.value === currentHeroDriver;
+  const slotLabels = { 'pos1': 'P1', 'pos2': 'P2', 'pos3': 'P3', 'pos4': 'P4', 'posFL': 'FASTEST LAP' };
 
-      confirmSelectDriver(currentHeroDriver, alreadyAssignedInTarget);
+  if (btn && currentSelectingSlot) {
+    const lblSpan = document.getElementById('lblHeroSlot');
+    if (lblSpan) {
+      lblSpan.innerText = slotLabels[currentSelectingSlot] || '';
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i>SELECT FOR <span id="lblHeroSlot">' + (slotLabels[currentSelectingSlot] || '') + '</span>';
+    }
+
+    btn.onclick = function() {
+      // เลือกนักแข่งคนปัจจุบันลงช่องที่เลือกทันที (รองรับทายซ้ำได้ทุกช่อง) แล้วพาไปช่องถัดไปใน 0ms!
+      confirmSelectDriver(currentHeroDriver, false);
 
       const heroModalEl = document.getElementById('driverHeroModal');
       const heroInst = bootstrap.Modal.getInstance(heroModalEl) || window.driverHeroModalInstance;
@@ -2418,7 +2296,7 @@ function previewDriverBeforeSelect(fullName, isSwiping) {
   if (!heroModalEl.classList.contains('show')) {
     if (heroPtsEl) heroPtsEl.innerText = "0";
     window.driverHeroModalInstance.show();
-    setTimeout(function() { animateCountUp(heroPtsEl, currentPts, 1200); }, 100);
+    setTimeout(function() { animateCountUp(heroPtsEl, currentPts, 1400); }, 100);
   } else {
     animateCountUp(heroPtsEl, currentPts, 550);
   }
@@ -2481,7 +2359,7 @@ function openDriverHero(fullName, rowEl, isSwiping) {
   if (!heroModalEl.classList.contains('show')) {
     if (heroPtsEl) heroPtsEl.innerText = "0";
     window.driverHeroModalInstance.show();
-    setTimeout(function() { animateCountUp(heroPtsEl, pts, 1500); }, 30);
+    setTimeout(function() { animateCountUp(heroPtsEl, pts, 1800); }, 20);
   } else {
     animateCountUp(heroPtsEl, pts, 600);
   }
