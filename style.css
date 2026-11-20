@@ -4292,3 +4292,30 @@ body {
   user-select: none;
   -webkit-user-select: none;
 }
+/* =========================================================
+   ✨ SENIOR UI/UX POLISH & RESPONSIVE FIXES (v6)
+   ========================================================= */
+
+/* ปรับขนาดตัวอักษรในหน้า Driver Hero ไม่ให้ล้นบนจอมือถือขนาดเล็ก */
+.hero-driver-title {
+  font-size: clamp(2.4rem, 9vw, 3.8rem) !important;
+}
+
+.stat-value-massive {
+  font-size: clamp(3.8rem, 16vw, 6.5rem) !important;
+}
+
+/* จัดกึ่งกลางหน้าโหลดเริ่มต้นให้พอดีกับกรอบมือถือ */
+#globalLoader.skeleton-wrapper {
+  padding: 24px 16px !important;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+/* เพิ่ม Micro-interaction ตอนกดการ์ดบนหน้าจอสัมผัส */
+.driver-slot-card:active,
+.driver-pick-btn:active,
+.premium-card:active,
+.player-list-card:active {
+  transform: scale(0.98) !important;
+}
