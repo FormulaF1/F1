@@ -415,8 +415,9 @@ function confirmLoginGate() {
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>ตรวจสอบ...';
 
   callGAS("loginPlayer", { playerName: selected, pin: pin }).then(function(res) {
-    btn.disabled = false; btn.innerHTML = oldText;
-        if (res.success) {
+    btn.disabled = false; 
+    btn.innerHTML = oldText;
+    if (res.success) {
       localStorage.setItem('f1_player_name', selected); 
       localStorage.setItem('f1_player_pin', pin); 
       syncOneSignalUser(selected);
@@ -425,13 +426,12 @@ function confirmLoginGate() {
       loginGateModalInstance.hide(); 
       onRaceChange(); 
       showToast('เข้าสู่ระบบสำเร็จ!', 'success'); 
-    }
- 
     } else {
       showToast(res.msg, 'error');
     }
   }).catch(function(err) {
-    btn.disabled = false; btn.innerHTML = oldText;
+    btn.disabled = false; 
+    btn.innerHTML = oldText;
     showToast('Error: ' + err, 'error');
   });
 }
