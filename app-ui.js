@@ -2611,20 +2611,33 @@ async function renderScheduleTab() {
     const isNext = race.id === nextRaceId;
     const roundNum = String(index + 1);
     
-    // แก้ไขการจับคู่ชื่อ API ให้ฉลาดขึ้น และยกเลิกการสุ่มดึง Index 
-    const gSheetName = race.name.toLowerCase();
-    const apiMatch = openF1Meetings.find(m => {
-      const apiName = m.meeting_name.toLowerCase();
+        // ตัดคำต่อท้าย เช่น (Main GP), (Main), (Race) ออกจากชื่อใน Google Sheets อัตโนมัติ
+    const cleanRaceName = String(race.name || '')
+      .replace(/\s*\(\s*main(?:\s*gp|\s*race)?\s*\)/gi, '')
+      .trim();
+
+    const gSheetName = cleanRaceName.toLowerCase();
+    const baseLocationName = gSheetName.replace(/\s*grand\s*prix.*$/i, '').trim();
+
+    const apiMatch = (Array.isArray(openF1Meetings) ? openF1Meetings : []).find(m => {
+      const apiName = String(m.meeting_name || '').toLowerCase();
+      if (!apiName || apiName.includes('testing')) return false;
       return gSheetName.includes(apiName) || 
-             apiName.includes(gSheetName.replace(' grand prix', '')) ||
-             (gSheetName.includes('brazil') && apiName.includes('são paulo')) ||
-             (gSheetName.includes('brazil') && apiName.includes('sao paulo')) ||
+             apiName.includes(gSheetName) ||
+             (baseLocationName.length >= 3 && apiName.includes(baseLocationName)) ||
+             (gSheetName.includes('brazil') && (apiName.includes('são paulo') || apiName.includes('sao paulo'))) ||
              (gSheetName.includes('emilia') && apiName.includes('imola')) ||
-             (gSheetName.includes('netherlands') && apiName.includes('dutch'));
+             (gSheetName.includes('netherlands') && apiName.includes('dutch')) ||
+             (gSheetName.includes('dutch') && apiName.includes('netherlands'));
     });
 
-    const officialName = apiMatch && apiMatch.meeting_official_name ? apiMatch.meeting_official_name : (race.type === 'Sprint' ? 'FORMULA 1 SPRINT WEEKEND 2026' : 'FORMULA 1 GRAND PRIX 2026');
-    const shortCountryName = apiMatch && apiMatch.meeting_name ? apiMatch.meeting_name : race.name;
+    const officialName = (apiMatch && apiMatch.meeting_official_name)
+      ? apiMatch.meeting_official_name
+      : (race.type === 'Sprint' ? 'FORMULA 1 SPRINT WEEKEND 2026' : 'FORMULA 1 GRAND PRIX 2026');
+
+    const shortCountryName = (apiMatch && apiMatch.meeting_name)
+      ? apiMatch.meeting_name.replace(/\s*\(\s*main(?:\s*gp|\s*race)?\s*\)/gi, '').trim()
+      : cleanRaceName;
 
     let flagCode = "un"; 
     Object.keys(COUNTRY_FLAGS).forEach(key => {
