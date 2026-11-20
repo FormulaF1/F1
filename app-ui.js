@@ -40,6 +40,23 @@ function triggerHaptic() {
   if (navigator.vibrate) navigator.vibrate(40); 
 }
 
+function escapeHtml(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function syncOneSignalUser(playerName) {
+  if (window.OneSignalDeferred && playerName) {
+    window.OneSignalDeferred.push(function(OneSignal) {
+      try { OneSignal.login(playerName); } catch (e) {}
+    });
+  }
+}
+
 // ฟังก์ชันเช็คและคืนค่าปุ่ม Radio เฉพาะเมื่ออยู่หน้าทายผลและไม่มี Modal เลือกนักแข่งเปิดอยู่
 function updateRadioButtonVisibility() {
   const predTab = document.getElementById('tab-pred');
@@ -399,14 +416,17 @@ function confirmLoginGate() {
 
   callGAS("loginPlayer", { playerName: selected, pin: pin }).then(function(res) {
     btn.disabled = false; btn.innerHTML = oldText;
-    if (res.success) {
+        if (res.success) {
       localStorage.setItem('f1_player_name', selected); 
       localStorage.setItem('f1_player_pin', pin); 
+      syncOneSignalUser(selected);
       if (pinEl) pinEl.value = '';
       updateUserSessionUI(); 
       loginGateModalInstance.hide(); 
       onRaceChange(); 
       showToast('เข้าสู่ระบบสำเร็จ!', 'success'); 
+    }
+ 
     } else {
       showToast(res.msg, 'error');
     }
@@ -838,8 +858,9 @@ function onCenterRaceChange() {
   const layoutImg = document.getElementById('rcTrackLayoutImg');
   if (layoutWrapper && layoutImg) {
     // ดึงรูปลิงก์จากตัวแปร MODAL_TRACK_IMAGES แทน ถ้าไม่มีค่อยไปหาใน Sheets
-    const trackLayoutSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && MODAL_TRACK_IMAGES[raceId]) 
-                           ? MODAL_TRACK_IMAGES[raceId] 
+        const fallbackMainId = String(raceId || '').replace(/-SPRINT$/i, '-MAIN');
+    const trackLayoutSrc = (typeof MODAL_TRACK_IMAGES !== 'undefined' && (MODAL_TRACK_IMAGES[raceId] || MODAL_TRACK_IMAGES[fallbackMainId])) 
+                           ? (MODAL_TRACK_IMAGES[raceId] || MODAL_TRACK_IMAGES[fallbackMainId]) 
                            : ((m.trackLayoutImg && m.trackLayoutImg.trim() !== "") ? getDriveDirectLink(m.trackLayoutImg) : '');
                            
     if (trackLayoutSrc) {
@@ -1109,7 +1130,10 @@ function openBreakdownModal(raceId) {
         html += renderMatchRow('fl', '⚡ Fastest Lap', act.fl, pred ? pred.fl : '');
       }
 
-      body.innerHTML = html;
+            body.innerHTML = html;
+    })
+    .catch(function(err) {
+      body.innerHTML = '<div class="text-danger text-center py-3">โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</div>';
     });
 }
 
@@ -1129,8 +1153,7 @@ function showPlayerStats(playerName) {
 
     const teamColor = TEAM_COLORS[pTeam] || "#555555";
     const logoUrl = TEAM_LOGOS[pTeam] ? getDriveDirectLink(TEAM_LOGOS[pTeam]) : "";
-
-        const avatarHtml = logoUrl ? ('<img src="' + logoUrl + '" alt="Team">') : '<i class="fa-solid fa-user-astronaut text-secondary"></i>';
+    const avatarHtml = logoUrl ? ('<img src="' + logoUrl + '" alt="Team">') : '<i class="fa-solid fa-user-astronaut text-secondary"></i>';
 
     let html = `
       <div class="stats-super-license" style="--team-color: ${teamColor}; text-align: left;">
@@ -1141,9 +1164,10 @@ function showPlayerStats(playerName) {
             ${avatarHtml}
           </div>
           <div class="sl-info">
-            <div class="sl-name">${res.playerName}</div>
-            <div class="sl-team" style="color: ${teamColor};">${pTeam}</div>
+            <div class="sl-name">${escapeHtml(res.playerName)}</div>
+            <div class="sl-team" style="color: ${teamColor};">${escapeHtml(pTeam)}</div>
           </div>
+
           <div class="sl-rank">
             <span class="sl-rank-lbl">CURRENT RANK</span>
             <span class="sl-rank-val">${res.rank}</span>
@@ -1272,11 +1296,14 @@ function showPlayerStats(playerName) {
           }
         }
       });
-    } else {
+        } else {
       document.getElementById('playerTelemetryChart').parentElement.innerHTML = `<div class="text-center text-muted small py-5"><i class="fa-solid fa-satellite-dish mb-2 fs-4"></i><br>NO TELEMETRY DATA</div>`;
     }
+  }).catch(function(err) {
+    body.innerHTML = '<div class="text-danger text-center py-4">ไม่สามารถโหลดสถิติได้ กรุณาลองใหม่อีกครั้ง</div>';
   });
 }
+
 
 function handleAdminDeadline() { 
   const pin = document.getElementById('adminPin').value, raceId = document.getElementById('adRaceDead').value, rawDt = document.getElementById('adNewDead').value; 
@@ -1343,32 +1370,49 @@ async function handleFetchOfficialResults() {
   const raceId = document.getElementById('adminRace').value; 
   const btn = document.getElementById('btnApiFetch'); 
   
-  if (!pin || !raceId) return; 
+  if (!pin || !raceId) {
+    showToast('กรุณากรอก Admin PIN และเลือกสนามก่อน', 'error');
+    return; 
+  }
   
   btn.disabled = true; 
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังดึงผล OpenF1...'; 
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังดึงผลทางการ...'; 
   
   try {
-    const driverRes = await fetch('https://api.openf1.org/v1/drivers?session_key=latest');
-    const drivers = await driverRes.json();
-    
-    const posRes = await fetch('https://api.openf1.org/v1/position?session_key=latest');
-    const positions = await posRes.json();
-    
+    // 1. ดึงผลการแข่งขันทางการตามหมายเลข Round ของสนามที่เลือกจริง (แม่นยำ 100%)
+    const officialRes = await callGAS("adminFetchOfficialResults", { pin: pin, raceId: raceId });
+    if (officialRes && officialRes.success && officialRes.data) {
+      const d = officialRes.data;
+      matchDriverOption('adP1', d.p1); 
+      matchDriverOption('adP2', d.p2); 
+      matchDriverOption('adP3', d.p3); 
+      matchDriverOption('adP4', d.p4); 
+      if (d.fl) matchDriverOption('adFL', d.fl);
+      if (d.url) document.getElementById('adLink').value = d.url;
+      showToast(officialRes.msg, 'success');
+      return;
+    }
+
+    // 2. Fallback: กรณีเพิ่งเข้าเส้นชัยสดๆ และ Jolpica ยังไม่อัปเดต จึงดึงจาก OpenF1 เซสชันล่าสุด
+    const [drivers, positions] = await Promise.all([
+      fetchOpenF1Cached('https://api.openf1.org/v1/drivers?session_key=latest', 30000),
+      fetchOpenF1Cached('https://api.openf1.org/v1/position?session_key=latest', 30000)
+    ]);
+
     const latestPositions = {};
-    positions.forEach(p => {
+    (Array.isArray(positions) ? positions : []).forEach(p => {
       latestPositions[p.driver_number] = p.position;
     });
-    
+
     let results = { p1: '', p2: '', p3: '', p4: '' };
-    drivers.forEach(d => {
+    (Array.isArray(drivers) ? drivers : []).forEach(d => {
       const pos = latestPositions[d.driver_number];
       if (pos === 1) results.p1 = d.full_name;
       if (pos === 2) results.p2 = d.full_name;
       if (pos === 3) results.p3 = d.full_name;
       if (pos === 4) results.p4 = d.full_name;
     });
-    
+
     matchDriverOption('adP1', results.p1); 
     matchDriverOption('adP2', results.p2); 
     matchDriverOption('adP3', results.p3); 
@@ -1376,33 +1420,29 @@ async function handleFetchOfficialResults() {
 
     const raceSelect = document.getElementById('adminRace');
     const isSprint = raceSelect.options[raceSelect.selectedIndex].dataset.type === 'Sprint';
-    
+
     if (!isSprint) {
-      const lapsRes = await fetch('https://api.openf1.org/v1/laps?session_key=latest');
-      const laps = await lapsRes.json();
-      
+      const laps = await fetchOpenF1Cached('https://api.openf1.org/v1/laps?session_key=latest', 30000);
       let fastestLap = null;
       let minDuration = Infinity;
-      
-      laps.forEach(lap => {
+
+      (Array.isArray(laps) ? laps : []).forEach(lap => {
         if (lap.lap_duration && lap.lap_duration < minDuration) {
           minDuration = lap.lap_duration;
           fastestLap = lap;
         }
       });
-      
+
       if (fastestLap) {
-        const flDriver = drivers.find(d => d.driver_number === fastestLap.driver_number);
-        if (flDriver) {
-          matchDriverOption('adFL', flDriver.full_name);
-        }
+        const flDriver = (Array.isArray(drivers) ? drivers : []).find(d => d.driver_number === fastestLap.driver_number);
+        if (flDriver) matchDriverOption('adFL', flDriver.full_name);
       }
     }
-    
-    showToast('ดึงผล P1-P4 และ Fastest Lap สำเร็จ!', 'success');
+
+    showToast('ดึงผลสดจาก OpenF1 (เซสชันล่าสุด) สำเร็จ! กรุณาตรวจทานก่อนบันทึก', 'success');
   } catch (error) {
-    console.error('OpenF1 API Error:', error);
-    showToast('⚠️ ไม่สามารถเชื่อมต่อ OpenF1 ได้', 'error');
+    console.error('Fetch Results Error:', error);
+    showToast('⚠️ ไม่สามารถดึงผลการแข่งขันได้: ' + error.message, 'error');
   } finally {
     btn.disabled = false; 
     btn.innerHTML = 'ดึงผลจริง API'; 
@@ -1434,24 +1474,35 @@ function copyPendingList() {
 function handleRegister(e) { 
   e.preventDefault(); triggerHaptic(); 
   const btn = document.getElementById('btnReg'), 
-        name = document.getElementById('regName').value, 
+        oldHtml = btn.innerHTML,
+        name = document.getElementById('regName').value.trim(), 
         team = document.getElementById('regTeam').value, 
         pinEl = document.getElementById('regPin'),
         pin = pinEl ? pinEl.value : ""; 
         
-  btn.disabled = true; 
-  callGAS("registerPlayer", { playerName: name, teamName: team, pin: pin }).then(function(res) { 
-    showToast(res.msg, res.success ? 'success' : 'error'); btn.disabled = false; 
-    if (res.success) { 
-      localStorage.setItem('f1_player_name', name); 
-      localStorage.setItem('f1_player_pin', pin); 
-      document.getElementById('regName').value = ''; 
-      if (pinEl) pinEl.value = ''; 
-      regModalInstance.hide(); 
-      forceRefreshData(); 
-      showTab('tab-pred', document.querySelectorAll('.f1-nav-link')[1]); 
-    }
-  }); 
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังลงทะเบียน...';
+  callGAS("registerPlayer", { playerName: name, teamName: team, pin: pin })
+    .then(function(res) { 
+      showToast(res.msg, res.success ? 'success' : 'error'); 
+      if (res.success) { 
+        localStorage.setItem('f1_player_name', name); 
+        localStorage.setItem('f1_player_pin', pin); 
+        syncOneSignalUser(name);
+        document.getElementById('regName').value = ''; 
+        if (pinEl) pinEl.value = ''; 
+        regModalInstance.hide(); 
+        forceRefreshData(); 
+        showTab('tab-pred', document.querySelectorAll('.f1-nav-link')[1]); 
+      }
+    })
+    .catch(function(err) {
+      showToast('ลงทะเบียนไม่สำเร็จ: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+    }); 
 }
 
 function handlePrediction(e) { 
@@ -1473,31 +1524,57 @@ function handlePrediction(e) {
   }
 
   const btn = document.getElementById('btnPred');
+  const oldHtml = btn.innerHTML;
   const playerPin = localStorage.getItem('f1_player_pin') || '';
   btn.disabled = true; 
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>TRANSMITTING...';
+
   callGAS("submitPrediction", { 
     pin: playerPin, 
     data: { playerName: player, raceId: rSel.value, type: rSel.options[rSel.selectedIndex].dataset.type, p1: p1, p2: p2, p3: p3, p4: p4, fl: document.getElementById('posFL').value } 
-  }).then(function(res) { 
-    btn.disabled = false; showToast(res.msg, res.success ? 'success' : 'error'); 
-    if (res.success) { 
-      document.getElementById('savedPredAlert').style.display = 'block'; 
-      document.getElementById('savedPredTime').innerText = 'บันทึกเมื่อ: ' + res.submittedAt; 
-      document.getElementById('savedPredContent').innerHTML = '<strong>P1:</strong> ' + res.data.p1 + ' | <strong>P2:</strong> ' + res.data.p2 + '<br><strong>P3:</strong> ' + res.data.p3 + ' | <strong>P4:</strong> ' + res.data.p4 + (res.data.fl ? ' | <strong>FL:</strong> ' + res.data.fl : ''); 
-      forceRefreshData(); 
-    } 
-  }); 
+  })
+    .then(function(res) { 
+      showToast(res.msg, res.success ? 'success' : 'error'); 
+      if (res.success) { 
+        document.getElementById('savedPredAlert').style.display = 'block'; 
+        document.getElementById('savedPredTime').innerText = 'บันทึกเมื่อ: ' + res.submittedAt; 
+        document.getElementById('savedPredContent').innerHTML =
+          '<strong>P1:</strong> ' + escapeHtml(res.data.p1) + ' | <strong>P2:</strong> ' + escapeHtml(res.data.p2) +
+          '<br><strong>P3:</strong> ' + escapeHtml(res.data.p3) + ' | <strong>P4:</strong> ' + escapeHtml(res.data.p4) +
+          (res.data.fl ? ' | <strong>FL:</strong> ' + escapeHtml(res.data.fl) : ''); 
+        forceRefreshData(); 
+      } 
+    })
+    .catch(function(err) {
+      showToast('ส่งคำทายไม่สำเร็จ: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+    }); 
 }
 
 function handleAdminSubmit(e) { 
   e.preventDefault(); 
   if (!confirm('ยืนยันบันทึกผลและตัดคะแนน?')) return; 
-  const btn = document.getElementById('btnAdmin'), rSel = document.getElementById('adminRace'); 
+  const btn = document.getElementById('btnAdmin'), 
+        oldHtml = btn.innerHTML,
+        rSel = document.getElementById('adminRace'); 
   btn.disabled = true; 
-  callGAS("saveResultAndCalculate", { pin: document.getElementById('adminPin').value, resultData: { raceId: rSel.value, type: rSel.options[rSel.selectedIndex].dataset.type, p1: document.getElementById('adP1').value, p2: document.getElementById('adP2').value, p3: document.getElementById('adP3').value, p4: document.getElementById('adP4').value, fl: document.getElementById('adFL').value, link: document.getElementById('adLink').value } }).then(function(res) { 
-    showToast(res.msg, res.success ? 'success' : 'error'); btn.disabled = false; 
-    if (res.success) { document.getElementById('adminPin').value = ''; adminModalInstance.hide(); forceRefreshData(); } 
-  }); 
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังบันทึกและตัดคะแนน...';
+
+  callGAS("saveResultAndCalculate", { pin: document.getElementById('adminPin').value, resultData: { raceId: rSel.value, type: rSel.options[rSel.selectedIndex].dataset.type, p1: document.getElementById('adP1').value, p2: document.getElementById('adP2').value, p3: document.getElementById('adP3').value, p4: document.getElementById('adP4').value, fl: document.getElementById('adFL').value, link: document.getElementById('adLink').value } })
+    .then(function(res) { 
+      showToast(res.msg, res.success ? 'success' : 'error'); 
+      if (res.success) { document.getElementById('adminPin').value = ''; adminModalInstance.hide(); forceRefreshData(); } 
+    })
+    .catch(function(err) {
+      showToast('เกิดข้อผิดพลาดขณะตัดคะแนน: ' + err.message, 'error');
+    })
+    .finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+    }); 
 }
 
 function refreshRaceCenter() {
@@ -1653,20 +1730,16 @@ async function loadOpenF1Meetings() {
   rSel.innerHTML = '<option value="" disabled selected>-- กำลังโหลดข้อมูลสนาม 2026 --</option>';
   
   try {
-    let meetings = null;
-    // 🎯 เช็คว่าเคยโหลดข้อมูลเก็บไว้ใน session แล้วหรือยัง (ป้องกัน Error 429)
+        let meetings = null;
     const cachedMeetings = sessionStorage.getItem('openF1_meetings_2026');
     
     if (cachedMeetings) {
       meetings = JSON.parse(cachedMeetings);
     } else {
-      const res = await fetch('https://api.openf1.org/v1/meetings?year=2026');
-      if (!res.ok) throw new Error(`API Error: ${res.status}`);
-      meetings = await res.json();
-      // เก็บลง Cache ชั่วคราว
+      meetings = await fetchOpenF1Cached('https://api.openf1.org/v1/meetings?year=2026', 600000);
       sessionStorage.setItem('openF1_meetings_2026', JSON.stringify(meetings));
     }
-    
+
     const now = new Date();
     const startedMeetings = (Array.isArray(meetings) ? meetings : []).filter(m => {
       const startDate = new Date(m.date_start);
@@ -1707,8 +1780,7 @@ async function onResultsRaceChange() {
   btnGroup.innerHTML = '<span class="text-secondary small"><i class="fa-solid fa-spinner fa-spin me-2"></i>กำลังโหลด Sessions...</span>';
   
   try {
-    const res = await fetch(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`);
-    const sessions = await res.json();
+        const sessions = await fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`, 300000);
     
     const now = new Date();
     
@@ -2397,15 +2469,6 @@ function formatTelemetryText(text) {
 // ระบบบันทึกประวัติการแชท
 let radioChatHistory = [];
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 // ส่งข้อความไปหา AI
 function sendRadioMessage() {
   const inputEl = document.getElementById('chatInput');
@@ -2494,13 +2557,6 @@ function sendQuickRadioPrompt(promptText) {
   sendRadioMessage(); // สั่งให้ส่งข้อความเข้าแชททันที
 }
 
-// ป้องกัน Error เวลา showTab() พยายามซ่อนวิทยุ
-function closeTeamRadio() {
-  const modal = document.getElementById('pitWallModal');
-  if (modal && !modal.classList.contains('hidden')) {
-    modal.classList.add('hidden');
-  }
-}
 // ==========================================
 // 🗓️ SCHEDULE TAB RENDERER & TIMETABLE MODAL
 // ==========================================
@@ -2542,11 +2598,11 @@ async function renderScheduleTab() {
   try {
     const cached = sessionStorage.getItem('openF1_meetings_2026');
     if (cached) openF1Meetings = JSON.parse(cached);
-    else {
-      const res = await fetch('https://api.openf1.org/v1/meetings?year=2026');
-      openF1Meetings = await res.json();
+        else {
+      openF1Meetings = await fetchOpenF1Cached('https://api.openf1.org/v1/meetings?year=2026', 600000);
       sessionStorage.setItem('openF1_meetings_2026', JSON.stringify(openF1Meetings));
     }
+
   } catch (e) { console.error("API Error:", e); }
 
   let html = '';
@@ -2708,8 +2764,7 @@ async function openWeekendTimetable(raceId, countryName, officialName, flagCode,
   // ดึงข้อมูลตารางเวลาแต่ละ Session จาก API
   if (meetingKey) {
     try {
-      const res = await fetch(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`);
-      const sessions = await res.json();
+            const sessions = await fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?meeting_key=${meetingKey}`, 300000);
       sessions.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
 
       let timelineHtml = '';
