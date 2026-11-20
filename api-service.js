@@ -499,6 +499,10 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   const info = (typeof DRIVER_INFO !== 'undefined') ? DRIVER_INFO[fullName] : null;
   if (!info) return;
 
+  // ✅ ซิงค์ State ให้ตรงกับระบบ Touch Swipe ใน app-ui.js
+  if (typeof currentHeroDriver !== 'undefined') currentHeroDriver = fullName;
+  if (typeof isHeroInPredictMode !== 'undefined') isHeroInPredictMode = false;
+
   const radioBtn = document.getElementById('btnTeamRadio');
   if (radioBtn) radioBtn.style.setProperty('display', 'none', 'important');
 
@@ -514,7 +518,8 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
 
   const heroPtsEl = document.getElementById('heroPoints');
   const heroPosEl = document.getElementById('heroPos');
-  if (heroPosEl) heroPosEl.innerText = championshipPos;
+  const cleanPos = String(championshipPos || '-').startsWith('P') ? championshipPos : ('P' + championshipPos);
+  if (heroPosEl) heroPosEl.innerText = cleanPos;
 
   const standardStatsEl = document.getElementById('heroStandardStats');
   const predictSectionEl = document.getElementById('heroPredictSection');
@@ -529,7 +534,7 @@ function openDriverHeroCustom(rowEl, fullName, points, championshipPos) {
   if (heroPtsEl) heroPtsEl.innerText = "0";
   setTimeout(() => {
     if (typeof animateCountUp === 'function') {
-      animateCountUp(heroPtsEl, points, 1800);
+      animateCountUp(heroPtsEl, points, 1200);
     } else if (heroPtsEl) {
       heroPtsEl.innerText = points;
     }
