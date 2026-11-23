@@ -682,12 +682,18 @@
         <!-- 🎯 2. พื้นที่กราฟ Radar และปุ่มเลือก (แสดงเฉพาะตอนกดมาจากหน้าทายผล อยู่ใน z-index สูงสุด) -->
         <div id="heroPredictSection" class="z-3 px-4 pb-5 pt-2" style="display: none; position: relative;">
           <div class="driver-radar-container mb-3">
-            <h6 class="text-center text-white mb-2" style="font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; font-size: 0.85rem;">
-              <i class="fa-solid fa-satellite-dish text-info me-2"></i>FORM ANALYSIS
-            </h6>
-            <div class="position-relative mx-auto" style="height: 200px; width: 100%;">
+                        <div class="d-flex justify-content-between align-items-center px-1 mb-1">
+              <h6 class="text-white m-0" style="font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px; font-size: 0.82rem;">
+                <i class="fa-solid fa-chart-line text-warning me-1"></i>LAST 7 RACES FORM
+              </h6>
+              <span id="driverTop4Summary" class="badge" style="background: rgba(237, 180, 11, 0.16); color: #EDB40B; border: 1px solid rgba(237, 180, 11, 0.35); font-family: 'Rajdhani', sans-serif; font-size: 0.7rem; letter-spacing: 0.5px;">
+                TOP 4: -/7
+              </span>
+            </div>
+            <div class="position-relative mx-auto" style="height: 195px; width: 100%;">
               <canvas id="driverRadarChart"></canvas>
             </div>
+
           </div>
 
           <div>
