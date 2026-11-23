@@ -136,6 +136,9 @@ async function callGAS(action, payload = {}, options = { useCache: false, ttl: 3
   return fetchPromise;
 }
 
+// ตัวแปรกลางเก็บคะแนนและอันดับจริงของนักแข่งทุกคน (ไม่ง้อสถานะการซ่อน DOM)
+window.f1DriverStandingsMap = window.f1DriverStandingsMap || {};
+
 // ดึงตารางคะแนนนักแข่งโลก (WDC)
 async function fetchF1Standings(forceRefresh = false) {
   try {
@@ -145,42 +148,53 @@ async function fetchF1Standings(forceRefresh = false) {
 
     const standings = lists[0].DriverStandings || [];
     const container = document.getElementById('driverStandingsList') || document.querySelector('.f1-official-standings');
-    if (!container) return;
-
-    const rowsArray = Array.from(container.querySelectorAll('.f1-standings-row'));
+    const rowsArray = container ? Array.from(container.querySelectorAll('.f1-standings-row')) : [];
 
     standings.forEach(driverData => {
       const apiFamilyName = cleanTextForMatch(driverData?.Driver?.familyName);
       if (!apiFamilyName) return;
 
-      const points = driverData.points || '0';
-      const position = driverData.position || driverData.positionText || '-';
+      const points = String(driverData.points || '0');
+      const position = String(driverData.position || driverData.positionText || '-');
 
+      // 1. บันทึกลงตัวแปรกลางเพื่อให้โหมดทายผลดึงไปใช้ได้ทันที 100%
+      if (typeof DRIVER_INFO !== 'undefined') {
+        const matchedFull = Object.keys(DRIVER_INFO).find(fullName =>
+          cleanTextForMatch(fullName).includes(apiFamilyName)
+        );
+        if (matchedFull) {
+          window.f1DriverStandingsMap[matchedFull] = { points: points, position: position };
+        }
+      }
+
+      // 2. อัปเดตตาราง DOM โดยใช้ textContent (ทำงานแม่นยำแม้กล่องติด d-none)
       const targetRow = rowsArray.find(row => {
         const nameEl = row.querySelector('.driver-name');
         if (!nameEl) return false;
-        const htmlName = cleanTextForMatch(nameEl.innerText);
+        const htmlName = cleanTextForMatch(nameEl.textContent);
         return htmlName.includes(apiFamilyName);
       });
 
       if (targetRow) {
         const ptsEl = targetRow.querySelector('.col-pts');
         const posEl = targetRow.querySelector('.col-pos');
-        if (ptsEl) ptsEl.innerText = points;
-        if (posEl) posEl.innerText = position;
+        if (ptsEl) ptsEl.textContent = points;
+        if (posEl) posEl.textContent = position;
         targetRow.setAttribute('data-position', position);
       }
     });
 
-    rowsArray.sort((a, b) => {
-      const posA = parseInt(a.getAttribute('data-position'), 10) || 999;
-      const posB = parseInt(b.getAttribute('data-position'), 10) || 999;
-      return posA - posB;
-    });
+    if (container && rowsArray.length > 0) {
+      rowsArray.sort((a, b) => {
+        const posA = parseInt(a.getAttribute('data-position'), 10) || 999;
+        const posB = parseInt(b.getAttribute('data-position'), 10) || 999;
+        return posA - posB;
+      });
 
-    const fragment = document.createDocumentFragment();
-    rowsArray.forEach(row => fragment.appendChild(row));
-    container.appendChild(fragment);
+      const fragment = document.createDocumentFragment();
+      rowsArray.forEach(row => fragment.appendChild(row));
+      container.appendChild(fragment);
+    }
   } catch (error) {
     console.error('❌ เกิดข้อผิดพลาดในการดึงข้อมูลนักแข่ง F1 API:', error);
   }
