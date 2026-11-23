@@ -2358,7 +2358,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
 }
 
-    // ปลั๊กอินวาดเส้นประ TOP 4, แสง Neon Glow รอบเส้นกราฟ และป้ายตำแหน่งเหนือจุด
+// ปลั๊กอินวาดเส้นประ TOP 4, แสง Neon Glow รอบเส้นกราฟ และป้ายตำแหน่งเหนือจุด
 const f1TrendBroadcastPlugin = {
   id: "f1TrendBroadcastPlugin",
   beforeDatasetsDraw(chart) {
@@ -2551,6 +2551,7 @@ async function renderDriverRadar(fullName, teamColor) {
     plugins: [f1TrendBroadcastPlugin]
   });
 }
+
 
 // 3. Clean Editorial Hero (Layout แต้มและปุ่มเหลืองแบบเดิมเป๊ะ + สลับหน้าไว Zero-Lag + ทายซ้ำได้ทุกช่อง)
 function previewDriverBeforeSelect(fullName, isSwiping) {
