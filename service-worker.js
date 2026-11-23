@@ -2,9 +2,9 @@
 // 🏎️ F1 PREDICTOR 2026 - SERVICE WORKER (PWA ENGINE v5)
 // ====================================================================
 
-const APP_CACHE_NAME = 'f1-app-shell-v11';
-const IMG_CACHE_NAME = 'f1-media-cache-v11';
-const CDN_CACHE_NAME = 'f1-cdn-assets-v11';
+const APP_CACHE_NAME = 'f1-app-shell-v14';
+const IMG_CACHE_NAME = 'f1-media-cache-v14';
+const CDN_CACHE_NAME = 'f1-cdn-assets-v14';
 const ACTIVE_CACHES = [APP_CACHE_NAME, IMG_CACHE_NAME, CDN_CACHE_NAME];
 const MAX_IMAGE_CACHE_ITEMS = 120;
 
