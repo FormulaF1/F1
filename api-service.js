@@ -140,13 +140,133 @@ async function callGAS(action, payload = {}, options = { useCache: false, ttl: 3
 window.f1DriverStandingsMap = window.f1DriverStandingsMap || {};
 
 // ดึงตารางคะแนนนักแข่งโลก (WDC)
+window.f1DriverStandingsMap = window.f1DriverStandingsMap || {};
+let officialStandingsPromise = null;
+
+// ดึงข้อมูลคะแนนโลกแบบรวมศูนย์ (ลองยิงตรง -> ถ้าพลาดดึงผ่าน GAS Proxy -> เก็บสำรองลงเครื่อง)
+async function loadCombinedOfficialStandings(forceRefresh = false) {
+  if (!forceRefresh && officialStandingsPromise) {
+    return officialStandingsPromise;
+  }
+
+  officialStandingsPromise = (async () => {
+    let drivers = [];
+    let constructors = [];
+
+    // 1. ลองดึงผ่าน Google Apps Script Backend ก่อน (เสถียรที่สุด ไม่ติดบล็อก CORS มือถือ)
+    try {
+      const gasRes = await callGAS("getF1OfficialStandings", {}, { useCache: !forceRefresh, ttl: 300000 });
+      if (gasRes && Array.isArray(gasRes.drivers) && gasRes.drivers.length > 0) {
+        drivers = gasRes.drivers;
+      }
+      if (gasRes && Array.isArray(gasRes.constructors) && gasRes.constructors.length > 0) {
+        constructors = gasRes.constructors;
+      }
+    } catch (e) {
+      console.warn("GAS Standings Proxy fallback:", e);
+    }
+
+    // 2. Fallback: หากยังไม่ได้ข้อมูล ให้ดึงตรงจาก Jolpica API (ลองทั้ง current และ 2026)
+    if (drivers.length === 0) {
+      for (const url of [
+        'https://api.jolpi.ca/ergast/f1/current/driverStandings.json',
+        'https://api.jolpi.ca/ergast/f1/2026/driverStandings.json'
+      ]) {
+        try {
+          const dData = await fetchJolpicaCached(url, forceRefresh);
+          const dLists = dData?.MRData?.StandingsTable?.StandingsLists;
+          if (dLists && dLists.length > 0 && dLists[0].DriverStandings?.length > 0) {
+            drivers = dLists[0].DriverStandings;
+            break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (constructors.length === 0) {
+      for (const url of [
+        'https://api.jolpi.ca/ergast/f1/current/constructorStandings.json',
+        'https://api.jolpi.ca/ergast/f1/2026/constructorStandings.json'
+      ]) {
+        try {
+          const cData = await fetchJolpicaCached(url, forceRefresh);
+          const cLists = cData?.MRData?.StandingsTable?.StandingsLists;
+          if (cLists && cLists.length > 0 && cLists[0].ConstructorStandings?.length > 0) {
+            constructors = cLists[0].ConstructorStandings;
+            break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 3. Fallback สุดท้าย: หากดึงจาก OpenF1 Championship (สำรองกรณี Jolpica ล่ม)
+    if (drivers.length === 0) {
+      try {
+        const [champDrivers, openDrivers] = await Promise.all([
+          fetchOpenF1Cached('https://api.openf1.org/v1/championship_drivers?session_key=latest'),
+          fetchOpenF1Cached('https://api.openf1.org/v1/drivers?session_key=latest')
+        ]);
+        if (Array.isArray(champDrivers) && champDrivers.length > 0) {
+          const numToLast = {};
+          (Array.isArray(openDrivers) ? openDrivers : []).forEach(d => {
+            if (d && d.driver_number != null) numToLast[d.driver_number] = d.last_name || d.full_name || '';
+          });
+          drivers = champDrivers.map(cd => ({
+            position: String(cd.position_current || '-'),
+            points: String(cd.points_current ?? '0'),
+            Driver: { familyName: numToLast[cd.driver_number] || '' }
+          })).filter(item => item.Driver.familyName);
+        }
+      } catch (e) {}
+    }
+
+    if (constructors.length === 0) {
+      try {
+        const champTeams = await fetchOpenF1Cached('https://api.openf1.org/v1/championship_teams?session_key=latest');
+        if (Array.isArray(champTeams) && champTeams.length > 0) {
+          constructors = champTeams.map(ct => ({
+            position: String(ct.position_current || '-'),
+            points: String(ct.points_current ?? '0'),
+            Constructor: {
+              constructorId: cleanTextForMatch(ct.team_name),
+              name: ct.team_name || ''
+            }
+          }));
+        }
+      } catch (e) {}
+    }
+
+    // บันทึกสำรองลง localStorage เผื่อออฟไลน์ หรือดึงของเก่ามาใช้กรณีเน็ตมีปัญหา
+    if (drivers.length > 0 || constructors.length > 0) {
+      try {
+        localStorage.setItem('f1_official_standings_backup', JSON.stringify({ drivers, constructors }));
+      } catch (e) {}
+    } else {
+      try {
+        const saved = JSON.parse(localStorage.getItem('f1_official_standings_backup') || 'null');
+        if (saved) {
+          drivers = saved.drivers || [];
+          constructors = saved.constructors || [];
+        }
+      } catch (e) {}
+    }
+
+    return { drivers, constructors };
+  })();
+
+  try {
+    return await officialStandingsPromise;
+  } finally {
+    setTimeout(() => { officialStandingsPromise = null; }, 5000);
+  }
+}
+
+// ดึงตารางคะแนนนักแข่งโลก (WDC)
 async function fetchF1Standings(forceRefresh = false) {
   try {
-    const data = await fetchJolpicaCached('https://api.jolpi.ca/ergast/f1/current/driverStandings.json', forceRefresh);
-    const lists = data?.MRData?.StandingsTable?.StandingsLists;
-    if (!lists || lists.length === 0) return;
+    const { drivers: standings } = await loadCombinedOfficialStandings(forceRefresh);
+    if (!standings || standings.length === 0) return;
 
-    const standings = lists[0].DriverStandings || [];
     const container = document.getElementById('driverStandingsList') || document.querySelector('.f1-official-standings');
     const rowsArray = container ? Array.from(container.querySelectorAll('.f1-standings-row')) : [];
 
@@ -154,10 +274,9 @@ async function fetchF1Standings(forceRefresh = false) {
       const apiFamilyName = cleanTextForMatch(driverData?.Driver?.familyName);
       if (!apiFamilyName) return;
 
-      const points = String(driverData.points || '0');
+      const points = String(driverData.points ?? '0');
       const position = String(driverData.position || driverData.positionText || '-');
 
-      // 1. บันทึกลงตัวแปรกลางเพื่อให้โหมดทายผลดึงไปใช้ได้ทันที 100%
       if (typeof DRIVER_INFO !== 'undefined') {
         const matchedFull = Object.keys(DRIVER_INFO).find(fullName =>
           cleanTextForMatch(fullName).includes(apiFamilyName)
@@ -167,12 +286,11 @@ async function fetchF1Standings(forceRefresh = false) {
         }
       }
 
-      // 2. อัปเดตตาราง DOM โดยใช้ textContent (ทำงานแม่นยำแม้กล่องติด d-none)
       const targetRow = rowsArray.find(row => {
+        const onclickAttr = cleanTextForMatch(row.getAttribute('onclick') || '');
         const nameEl = row.querySelector('.driver-name');
-        if (!nameEl) return false;
-        const htmlName = cleanTextForMatch(nameEl.textContent);
-        return htmlName.includes(apiFamilyName);
+        const htmlName = nameEl ? cleanTextForMatch(nameEl.textContent) : '';
+        return onclickAttr.includes(apiFamilyName) || htmlName.includes(apiFamilyName);
       });
 
       if (targetRow) {
@@ -203,11 +321,9 @@ async function fetchF1Standings(forceRefresh = false) {
 // ดึงตารางคะแนนทีมผู้ผลิต (WCC)
 async function fetchF1TeamStandings(forceRefresh = false) {
   try {
-    const data = await fetchJolpicaCached('https://api.jolpi.ca/ergast/f1/current/constructorStandings.json', forceRefresh);
-    const lists = data?.MRData?.StandingsTable?.StandingsLists;
-    if (!lists || lists.length === 0) return;
+    const { constructors: standings } = await loadCombinedOfficialStandings(forceRefresh);
+    if (!standings || standings.length === 0) return;
 
-    const standings = lists[0].ConstructorStandings || [];
     const container = document.getElementById('teamStandingsList') || document.querySelector('.f1-team-cards-container');
     if (!container) return;
 
@@ -216,31 +332,33 @@ async function fetchF1TeamStandings(forceRefresh = false) {
     standings.forEach(teamData => {
       const apiTeamId = cleanTextForMatch(teamData?.Constructor?.constructorId);
       const apiTeamName = cleanTextForMatch(teamData?.Constructor?.name);
-      if (!apiTeamId) return;
+      if (!apiTeamId && !apiTeamName) return;
 
-      const points = teamData.points || '0';
-      const position = teamData.position || teamData.positionText || '-';
+      const points = String(teamData.points ?? '0');
+      const position = String(teamData.position || teamData.positionText || '-');
 
       const targetRow = rowsArray.find(row => {
         const nameEl = row.querySelector('.team-name');
         if (!nameEl) return false;
-        const htmlName = cleanTextForMatch(nameEl.innerText);
+        const htmlName = cleanTextForMatch(nameEl.textContent);
 
-        // จับคู่ชื่อทีมพิเศษระหว่าง API กับชื่อปี 2026 ในแอป
-        if ((apiTeamId.includes('sauber') || apiTeamId.includes('audi')) && htmlName === 'audi') return true;
-        if ((apiTeamId === 'rb' || apiTeamId.includes('vcarb') || apiTeamName.includes('racing bulls')) && htmlName === 'vcarb') return true;
-        if (apiTeamId === 'red_bull' && htmlName.includes('red bull')) return true;
-        if (apiTeamId.includes('aston') && htmlName.includes('aston')) return true;
+        if ((apiTeamId.includes('sauber') || apiTeamId.includes('audi') || apiTeamName.includes('audi') || apiTeamName.includes('sauber')) && htmlName === 'audi') return true;
+        if ((apiTeamId === 'rb' || apiTeamId.includes('vcarb') || apiTeamName.includes('racing bulls') || apiTeamName.includes('rb')) && htmlName === 'vcarb') return true;
+        if ((apiTeamId.includes('red_bull') || apiTeamName.includes('red bull')) && htmlName.includes('red bull')) return true;
+        if ((apiTeamId.includes('aston') || apiTeamName.includes('aston')) && htmlName.includes('aston')) return true;
+        if ((apiTeamId.includes('cadillac') || apiTeamName.includes('cadillac')) && htmlName.includes('cadillac')) return true;
 
         const firstWord = htmlName.split(' ')[0];
-        return htmlName.includes(apiTeamId) || (firstWord.length > 2 && apiTeamId.includes(firstWord));
+        return (apiTeamId && htmlName.includes(apiTeamId)) ||
+               (apiTeamName && apiTeamName.includes(firstWord)) ||
+               (firstWord.length > 2 && apiTeamId.includes(firstWord));
       });
 
       if (targetRow) {
         const ptsEl = targetRow.querySelector('.col-pts');
         const posEl = targetRow.querySelector('.col-pos');
-        if (ptsEl) ptsEl.innerText = points;
-        if (posEl) posEl.innerText = position;
+        if (ptsEl) ptsEl.textContent = points;
+        if (posEl) posEl.textContent = position;
         targetRow.setAttribute('data-position', position);
       }
     });
