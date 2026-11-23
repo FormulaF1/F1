@@ -4326,10 +4326,30 @@ body {
   margin-bottom: 26vh !important; /* ⬅️ เดิม 23vh ปรับเพิ่มได้ถ้ารูปนักแข่งบังตัวเลข */
 }
 
-/* 5. กันเหนียว: เมื่อเปิดในโหมดทายผล (มีกราฟ Radar ด้านล่าง) ให้ย่อระยะห่างอัตโนมัติจะได้ไม่ล้นจอ */
+/* 5. โหมดทายผล (มีกราฟ Radar): ย่อขนาดคะแนนและอันดับลงอัตโนมัติ ไม่ให้เบียดกราฟ */
 #driverHeroModal:has(#heroPredictSection[style*="block"]) #heroStandardStats {
-  padding-bottom: 12px !important;
+  margin-top: 8px !important;
+  padding-bottom: 6px !important;
 }
+
+#driverHeroModal:has(#heroPredictSection[style*="block"]) #heroStandardStats > div {
+  gap: 4px !important;
+}
+
+#driverHeroModal:has(#heroPredictSection[style*="block"]) .stat-value-massive {
+  font-size: 52px !important; /* ปรับขนาดตัวเลขโหมดทายผลตรงนี้ เช่น 42px - 60px */
+  line-height: 0.9 !important;
+}
+
+#driverHeroModal:has(#heroPredictSection[style*="block"]) .stat-unit {
+  font-size: 1.15rem !important;
+}
+
+#driverHeroModal:has(#heroPredictSection[style*="block"]) .stat-label-mini {
+  font-size: 0.72rem !important;
+  margin-bottom: 2px !important;
+}
+
 
 
 /* จัดกึ่งกลางหน้าโหลดเริ่มต้นให้พอดีกับกรอบมือถือ */
