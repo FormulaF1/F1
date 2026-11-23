@@ -2288,19 +2288,41 @@ function previewDriverBeforeSelect(fullName, isSwiping) {
   currentHeroDriver = fullName;
   isHeroInPredictMode = true;
 
-  let currentPts = "0";
+    let currentPts = "0";
   let currentPos = "-";
-  const standingRows = document.querySelectorAll('#driverStandingsList .f1-standings-row');
-  standingRows.forEach(function(row) {
-    const onclickAttr = row.getAttribute('onclick') || '';
-    const lastName = fullName.split(' ').slice(1).join(' ');
-    if (onclickAttr.includes(fullName) || (lastName && row.innerText.includes(lastName))) {
-      const ptsEl = row.querySelector('.col-pts');
-      const posEl = row.querySelector('.col-pos');
-      if (ptsEl) currentPts = ptsEl.innerText.trim();
-      if (posEl) currentPos = posEl.innerText.trim();
+
+  // 1. ดึงจากตัวแปรกลางของ API ก่อน (แม่นยำ 100% แม้ตารางซ่อนอยู่)
+  if (window.f1DriverStandingsMap && window.f1DriverStandingsMap[fullName]) {
+    currentPts = window.f1DriverStandingsMap[fullName].points;
+    currentPos = window.f1DriverStandingsMap[fullName].position;
+  } else {
+    // 2. Fallback ดึงด้วย textContent แทน innerText
+    const standingRows = document.querySelectorAll('#driverStandingsList .f1-standings-row');
+    standingRows.forEach(function(row) {
+      const onclickAttr = row.getAttribute('onclick') || '';
+      const lastName = fullName.split(' ').slice(1).join(' ');
+      if (onclickAttr.includes(fullName) || (lastName && row.textContent.includes(lastName))) {
+        const ptsEl = row.querySelector('.col-pts');
+        const posEl = row.querySelector('.col-pos');
+        if (ptsEl) currentPts = ptsEl.textContent.trim();
+        if (posEl) currentPos = posEl.textContent.trim();
+      }
+    });
+
+    // 3. หากเปิดการ์ดเร็วกว่าที่ API โหลดเสร็จ ให้ดึงข้อมูลสดแล้ววิ่งเลขตามขึ้นมาทันที!
+    if ((!window.f1DriverStandingsMap || Object.keys(window.f1DriverStandingsMap).length === 0) && typeof fetchF1Standings === 'function') {
+      fetchF1Standings().then(function() {
+        const fresh = window.f1DriverStandingsMap && window.f1DriverStandingsMap[fullName];
+        if (fresh && currentHeroDriver === fullName) {
+          const hPos = document.getElementById('heroPos');
+          const hPts = document.getElementById('heroPoints');
+          if (hPos) hPos.textContent = 'P' + fresh.position;
+          if (hPts) animateCountUp(hPts, fresh.points, 900);
+        }
+      });
     }
-  });
+  }
+
 
   const parts = fullName.split(' ');
   document.getElementById('heroDriverFirstName').innerText = parts[0];
