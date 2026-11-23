@@ -123,7 +123,6 @@ window.onload = function() {
   initHeroHybridShowcaseUI();
   buildDriverGrid();
   loadData();
-  loadOpenF1Meetings();
   loadLatestNews();
   loadDriverStatsAPI();
   updateRadioButtonVisibility();
@@ -1635,6 +1634,15 @@ function switchStandings(type) {
   if (views[type]) views[type].classList.remove('d-none');
   if (btns[type]) btns[type].classList.add('active');
 
+    if (type === 'results') {
+    const rSel = document.getElementById('selResultsRace');
+    if (rSel && rSel.options.length <= 1) {
+      loadOpenF1Meetings();
+    }
+  } else if (type === 'driver' && (!window.f1DriverStandingsMap || Object.keys(window.f1DriverStandingsMap).length === 0)) {
+    fetchF1Standings(true);
+  }
+
   const checkCard = document.getElementById('checkResultCard');
   if (checkCard) {
     if (type === 'user') checkCard.style.display = 'block'; 
@@ -2407,17 +2415,20 @@ function openDriverHero(fullName, rowEl, isSwiping) {
   const radioBtn = document.getElementById('btnTeamRadio');
   if (radioBtn) radioBtn.style.setProperty('display', 'none', 'important');
 
-  let pts = "0";
+    let pts = "0";
   let pos = "-";
-  if (rowEl) {
-    pts = rowEl.querySelector('.col-pts').innerText;
-    pos = rowEl.querySelector('.col-pos').innerText;
+  if (window.f1DriverStandingsMap && window.f1DriverStandingsMap[fullName]) {
+    pts = window.f1DriverStandingsMap[fullName].points;
+    pos = window.f1DriverStandingsMap[fullName].position;
+  } else if (rowEl) {
+    pts = rowEl.querySelector('.col-pts').textContent.trim();
+    pos = rowEl.querySelector('.col-pos').textContent.trim();
   } else {
     document.querySelectorAll('#driverStandingsList .f1-standings-row').forEach(function(r) {
       const onclickAttr = r.getAttribute('onclick') || '';
       if (onclickAttr.includes(fullName)) {
-        pts = r.querySelector('.col-pts').innerText;
-        pos = r.querySelector('.col-pos').innerText;
+        pts = r.querySelector('.col-pts').textContent.trim();
+        pos = r.querySelector('.col-pos').textContent.trim();
       }
     });
   }
