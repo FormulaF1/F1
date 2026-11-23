@@ -450,11 +450,14 @@ function showTab(tabId, el) {
   document.getElementById(tabId).style.display = 'block'; 
   el.classList.add('active'); 
 
-  // 🎯 ควบคุมการแสดงผลปุ่ม Radio (แสดงเฉพาะหน้าทายผล tab-pred)
+    // 🎯 ควบคุมการแสดงผลปุ่ม Radio + เตรียมข้อมูลกราฟ 7 สนามล่วงหน้าแบบไม่แย่งคิว API
   const radioBtn = document.getElementById('btnTeamRadio');
   if (radioBtn) {
     if (tabId === 'tab-pred') {
       radioBtn.style.setProperty('display', 'flex', 'important');
+      if (typeof loadRecent7RacesHistory === 'function' && !recent7RacesCache && !recent7RacesPromise) {
+        setTimeout(function() { loadRecent7RacesHistory(); }, 400);
+      }
     } else {
       radioBtn.style.setProperty('display', 'none', 'important');
       closeTeamRadio();
@@ -2346,38 +2349,39 @@ async function loadRecent7RacesHistory() {
   return recent7RacesPromise;
 }
 
-// ปลั๊กอินวาดโซนไฮไลต์ P1-P4 และป้ายกำกับตำแหน่งบนจุดกราฟ
+// แปลงรหัสสี Hex เป็น rgba เพื่อทำแสงฟุ้งละลายกลืนกับพื้นหลังแบบไร้ขอบตัด
+function hexToRgba(hex, alpha) {
+  const clean = String(hex || "#0dcaf0").replace("#", "").trim();
+  const full = clean.length === 3 ? clean.split("").map(c => c + c).join("") : clean;
+  const num = parseInt(full, 16);
+  if (isNaN(num)) return `rgba(13, 202, 240, ${alpha})`;
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+}
+
+// ปลั๊กอินวาดเส้นประ TOP 4 บางๆ และตัวเลขกำกับจุดแบบลอยตัว (ไร้ตาราง ไร้กรอบทึบ)
 const f1TrendBroadcastPlugin = {
   id: "f1TrendBroadcastPlugin",
   beforeDatasetsDraw(chart) {
     const { ctx, chartArea, scales: { y } } = chart;
     if (!chartArea || !y) return;
 
-    const yTop = chartArea.top;
-    const yP4 = y.getPixelForValue(4.4);
+    const yP4 = y.getPixelForValue(4.35);
+    if (yP4 < chartArea.top || yP4 > chartArea.bottom) return;
 
     ctx.save();
-    // ระบายแถบโซนเป้าหมาย P1 - P4 สีทองจางๆ
-    const zoneGrad = ctx.createLinearGradient(0, yTop, 0, yP4);
-    zoneGrad.addColorStop(0, "rgba(237, 180, 11, 0.18)");
-    zoneGrad.addColorStop(1, "rgba(237, 180, 11, 0.03)");
-    ctx.fillStyle = zoneGrad;
-    ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, Math.max(0, yP4 - yTop));
-
-    // เส้นประแบ่งเขต P4 Target Line
+    // วาดเฉพาะเส้นประบางๆ เส้นเดียวที่ขอบล่าง P4 (ไม่มีกรอบสี่เหลี่ยมทึบมาตัดฉากหลัง)
     ctx.beginPath();
-    ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = "rgba(237, 180, 11, 0.45)";
+    ctx.setLineDash([3, 5]);
+    ctx.strokeStyle = "rgba(237, 180, 11, 0.28)";
     ctx.lineWidth = 1;
     ctx.moveTo(chartArea.left, yP4);
     ctx.lineTo(chartArea.right, yP4);
     ctx.stroke();
 
-    // ป้ายกำกับ TOP 4 ZONE มุมขวาของเส้นประ
-    ctx.font = "700 9px 'Rajdhani', sans-serif";
-    ctx.fillStyle = "rgba(237, 180, 11, 0.75)";
+    ctx.font = "600 9px 'Rajdhani', sans-serif";
+    ctx.fillStyle = "rgba(237, 180, 11, 0.55)";
     ctx.textAlign = "right";
-    ctx.fillText("TOP 4 ZONE", chartArea.right - 2, yP4 - 3);
+    ctx.fillText("TOP 4 LINE", chartArea.right, yP4 - 4);
     ctx.restore();
   },
   afterDatasetsDraw(chart) {
@@ -2387,28 +2391,167 @@ const f1TrendBroadcastPlugin = {
     if (!meta || !meta.data) return;
 
     ctx.save();
-    ctx.font = "700 10px 'Share Tech Mono', 'Rajdhani', sans-serif";
+    ctx.font = "700 11px 'Share Tech Mono', 'Rajdhani', sans-serif";
     ctx.textAlign = "center";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+    ctx.shadowBlur = 6;
 
     meta.data.forEach((pt, idx) => {
       const rec = rawMeta[idx];
       if (!rec || rec.pos === null) return;
 
-      const labelTxt = rec.status;
       if (rec.isDnf) {
         ctx.fillStyle = "#ff4d4f";
-        ctx.fillText(labelTxt, pt.x, pt.y - 8);
       } else if (rec.pos <= 4) {
-        ctx.fillStyle = "#EDB40B"; // สีทองสำหรับ P1-P4
-        ctx.fillText(labelTxt, pt.x, pt.y + 14 > chart.chartArea.bottom ? pt.y - 8 : (rec.pos <= 2 ? pt.y + 14 : pt.y - 8));
+        ctx.fillStyle = "#EDB40B";
       } else {
-        ctx.fillStyle = "#e2e8f0";
-        ctx.fillText(labelTxt, pt.x, pt.y - 8);
+        ctx.fillStyle = "#f1f5f9";
       }
+      // วางป้ายลอยเหนือจุดทุกตัวเท่ากัน อ่านง่าย ไม่ทับเส้นกราฟ
+      ctx.fillText(rec.status, pt.x, pt.y - 10);
     });
     ctx.restore();
   }
 };
+
+// วาดกราฟเส้น 7 สนามแบบ Floating Minimalist (สีประจำทีม + เงาฟุ้งละลายกลืนกับพื้นหลัง)
+async function renderDriverRadar(fullName, teamColor) {
+  const canvasEl = document.getElementById("driverRadarChart");
+  if (!canvasEl) return;
+
+  const colorCode = teamColor || "#0dcaf0";
+  const badgeEl = document.getElementById("driverTop4Summary");
+
+  const trendData = await loadRecent7RacesHistory();
+  if (currentHeroDriver && currentHeroDriver !== fullName) return;
+
+  const labels = trendData.labels || [];
+  const records = (trendData.driverMap && trendData.driverMap[fullName]) ? trendData.driverMap[fullName] : [];
+
+  const top4Count = records.filter(r => r && !r.isDnf && r.pos !== null && r.pos <= 4).length;
+  if (badgeEl) {
+    badgeEl.textContent = labels.length > 0 ? `TOP 4: ${top4Count}/${labels.length}` : "LOADING...";
+  }
+
+  const validPositions = records.filter(r => r && r.pos !== null).map(r => r.pos);
+  const worstPos = validPositions.length > 0 ? Math.max(...validPositions) : 12;
+  // ปรับระยะแกน Y อัตโนมัติ ไม่ให้เส้นของนักแข่งกลุ่มนำถูกบีบติดขอบบน
+  const dynamicMaxY = Math.min(22, Math.max(8, worstPos + 2));
+
+  const plotValues = records.map(r => (r && r.pos !== null) ? r.pos : null);
+  const pointBgColors = records.map(r => {
+    if (!r || r.pos === null) return "transparent";
+    if (r.isDnf) return "#ff2a2a";
+    if (r.pos === 1) return "#EDB40B";
+    return "#0d0e12";
+  });
+  const pointBorderColors = records.map(r => {
+    if (!r || r.pos === null) return "transparent";
+    if (r.isDnf) return "#ff2a2a";
+    return colorCode;
+  });
+
+  const ctx = canvasEl.getContext("2d");
+  const chartHeight = canvasEl.parentElement?.clientHeight || 180;
+  // แสงไล่เฉดสีทีมบางเบาใต้เส้นกราฟ แล้วละลายหายไปกับฉากหลังตั้งแต่ครึ่งกลางกราฟ (ไม่ตีกรอบสี่เหลี่ยม)
+  const areaGradient = ctx.createLinearGradient(0, 15, 0, chartHeight * 0.82);
+  areaGradient.addColorStop(0, hexToRgba(colorCode, 0.28));
+  areaGradient.addColorStop(0.55, hexToRgba(colorCode, 0.05));
+  areaGradient.addColorStop(1, hexToRgba(colorCode, 0));
+
+  if (heroRadarChartInstance && heroRadarChartInstance.config.type === "line" && heroRadarChartInstance.canvas === canvasEl) {
+    heroRadarChartInstance.data.labels = labels;
+    const ds = heroRadarChartInstance.data.datasets[0];
+    ds.label = fullName;
+    ds.data = plotValues;
+    ds.rawRecords = records;
+    ds.borderColor = colorCode;
+    ds.backgroundColor = areaGradient;
+    ds.pointBackgroundColor = pointBgColors;
+    ds.pointBorderColor = pointBorderColors;
+    heroRadarChartInstance.options.scales.y.max = dynamicMaxY;
+    heroRadarChartInstance.options.plugins.tooltip.borderColor = colorCode;
+    heroRadarChartInstance.update();
+    return;
+  }
+
+  if (heroRadarChartInstance) {
+    heroRadarChartInstance.destroy();
+    heroRadarChartInstance = null;
+  }
+
+  heroRadarChartInstance = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: fullName,
+        data: plotValues,
+        rawRecords: records,
+        borderColor: colorCode,
+        backgroundColor: areaGradient,
+        borderWidth: 3,
+        fill: true,
+        tension: 0.38,
+        spanGaps: true,
+        clip: false,
+        pointBackgroundColor: pointBgColors,
+        pointBorderColor: pointBorderColors,
+        pointBorderWidth: 2.4,
+        pointRadius: 4.5,
+        pointHoverRadius: 6.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: { top: 24, right: 14, left: 14, bottom: 4 }
+      },
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false, drawBorder: false },
+          ticks: {
+            color: "rgba(226, 232, 240, 0.8)",
+            font: { family: "Rajdhani", size: 11, weight: "700" },
+            padding: 6
+          }
+        },
+        y: {
+          display: false, // ซ่อนแกน P1-P20 และเส้นตารางแนวนอนออกทั้งหมด 100%
+          reverse: true,
+          min: 1,
+          max: dynamicMaxY
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "rgba(10, 12, 16, 0.92)",
+          titleColor: "#ffffff",
+          bodyColor: "#EDB40B",
+          titleFont: { family: "Rajdhani", size: 13, weight: "bold" },
+          bodyFont: { family: "Share Tech Mono", size: 13 },
+          borderColor: colorCode,
+          borderWidth: 1,
+          displayColors: false,
+          callbacks: {
+            title: function(items) {
+              return "GP: " + items[0].label;
+            },
+            label: function(context) {
+              const rec = context.dataset.rawRecords?.[context.dataIndex];
+              if (!rec || rec.pos === null) return "Did Not Participate";
+              return rec.isDnf ? `Status: ${rec.status}` : `Finish: P${rec.pos}`;
+            }
+          }
+        }
+      }
+    },
+    plugins: [f1TrendBroadcastPlugin]
+  });
+}
 
 // วาดกราฟเส้น 7 สนามย้อนหลังด้วยสีประจำทีมของนักแข่งแต่ละคน
 async function renderDriverRadar(fullName, teamColor) {
