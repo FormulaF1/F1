@@ -2474,19 +2474,25 @@ async function renderDriverRadar(fullName, teamColor) {
         rawRecords: records,
         borderColor: colorCode,
         // ✅ คำนวณ Gradient ตามขอบเขตจริงของเส้นกราฟ และเฟดจางหายเป็น 0% ด้านล่างแบบเนียนกริบไร้กรอบ!
-        backgroundColor: function(context) {
+          backgroundColor: function(context) {
           const chart = context.chart;
           const { ctx: c, chartArea } = chart;
           if (!chartArea) return hexToRgba(colorCode, 0.12);
-          const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          grad.addColorStop(0, hexToRgba(colorCode, 0.24));
-          grad.addColorStop(0.55, hexToRgba(colorCode, 0.06));
-          grad.addColorStop(0.92, hexToRgba(colorCode, 0));
-          grad.addColorStop(1, hexToRgba(colorCode, 0));
+          const meta = chart.getDatasetMeta(0);
+          let topY = chartArea.top;
+          if (meta && meta.data && meta.data.length > 0) {
+            const ys = meta.data.map(p => p.y).filter(v => typeof v === "number" && !isNaN(v));
+            if (ys.length > 0) topY = Math.min(...ys);
+          }
+          const grad = c.createLinearGradient(0, topY, 0, chartArea.bottom);
+          grad.addColorStop(0, hexToRgba(colorCode, 0.30));
+          grad.addColorStop(0.45, hexToRgba(colorCode, 0.10));
+          grad.addColorStop(0.82, hexToRgba(colorCode, 0.01));
+          grad.addColorStop(1, "rgba(10, 14, 28, 0)");
           return grad;
         },
         borderWidth: 3,
-        fill: "end", // ✅ หัวใจสำคัญ! ระบายสีลง "ใต้เส้นกราฟ" (ไม่ระบายกลับหัวขึ้นไปชนเพดานบนอีกแล้ว!)
+        fill: "start",
         tension: 0.38,
         spanGaps: true,
         clip: false,
