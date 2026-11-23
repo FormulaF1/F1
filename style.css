@@ -4323,12 +4323,12 @@ body {
 
 /* 4. ขยับตัวนักแข่งขึ้นเล็กน้อยเพื่อให้รับกับตัวเลขที่ลอยสูงขึ้น */
 .hero-driver-cutout {
-  margin-bottom: 26vh !important; /* ⬅️ เดิม 23vh ปรับเพิ่มได้ถ้ารูปนักแข่งบังตัวเลข */
+  margin-bottom: 24vh !important; /* ⬆️⬇️ ขยับขึ้น-ลง: เพิ่มเลข = ลอยสูงขึ้น / ลดเลข (เช่น 18vh) = เลื่อนต่ำลง */
 }
 
 /* 5. โหมดทายผล (มีกราฟ Radar): ย่อขนาดคะแนนและอันดับลงอัตโนมัติ ไม่ให้เบียดกราฟ */
 #driverHeroModal:has(#heroPredictSection[style*="block"]) #heroStandardStats {
-  margin-top: 8px !important;
+  margin-top: 8px !important; 
   padding-bottom: 6px !important;
 }
 
