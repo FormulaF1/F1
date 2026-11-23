@@ -456,7 +456,7 @@ function resolveAppDriverName(apiDriver) {
   return apiDriver.full_name || "Driver";
 }
 
-// ดึงและคำนวณผลการแข่งขันแต่ละเซสชัน (ตัดการเรียก Jolpica ที่ล่มออก และใช้ f1DriverStandingsMap แทน)
+// ดึงผลการแข่งขันอย่างเป็นทางการแต่ละเซสชัน (อิง Official Classification จาก session_result + position ก่อนคำนวณ laps)
 async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null, disableHeroClick = false) {
   if (btnEl) {
     document.querySelectorAll("#resultsSessionBtnGroup button").forEach(b => {
@@ -470,17 +470,43 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
   list.innerHTML = '<div class="text-center py-5"><i class="fa-solid fa-spinner fa-spin text-danger fs-3 mb-2"></i><div class="text-secondary small f1-font">CALCULATING OFFICIAL CLASSIFICATION...</div></div>';
 
   try {
-    const [sessionData, drivers, laps] = await Promise.all([
+    // ดึง Official Session Result ควบคู่กับ Drivers และ Laps (ผ่านระบบคิวกันติด 429)
+    const [sessionData, officialRes, drivers, laps] = await Promise.all([
       fetchOpenF1Cached(`https://api.openf1.org/v1/sessions?session_key=${sessionKey}`),
+      fetchOpenF1Cached(`https://api.openf1.org/v1/session_result?session_key=${sessionKey}`).catch(() => []),
       fetchOpenF1Cached(`https://api.openf1.org/v1/drivers?session_key=${sessionKey}`),
       fetchOpenF1Cached(`https://api.openf1.org/v1/laps?session_key=${sessionKey}`)
     ]);
+
+    // หาก session_result ยังว่าง (เช่น เซสชันเพิ่งจบสดๆ) ให้ดึงลำดับเข้าเส้นชัยจริงจาก /v1/position สำรองไว้
+    let finalPositionsMap = {};
+    if (!Array.isArray(officialRes) || officialRes.length === 0) {
+      const posData = await fetchOpenF1Cached(`https://api.openf1.org/v1/position?session_key=${sessionKey}`).catch(() => []);
+      if (Array.isArray(posData)) {
+        posData.forEach(p => {
+          if (p && p.driver_number != null && p.position != null) {
+            finalPositionsMap[p.driver_number] = Number(p.position);
+          }
+        });
+      }
+    }
 
     const sessionName = (Array.isArray(sessionData) && sessionData[0]?.session_name)
       ? sessionData[0].session_name.toLowerCase()
       : "";
     const isRace = sessionName === "race" || sessionName === "sprint";
 
+    // แมพข้อมูลจาก Official Result (แม่นยำ 100% รวม Penalty / DNF / DSQ / Lapped)
+    const officialMap = {};
+    if (Array.isArray(officialRes)) {
+      officialRes.forEach(item => {
+        if (item && item.driver_number != null) {
+          officialMap[item.driver_number] = item;
+        }
+      });
+    }
+
+    // คำนวณ Fastest Lap และแก้ไขบั๊กเวลาค้างจากรอบก่อนหน้าเมื่อ lap_duration เป็น null
     const driverStats = {};
     let sessionFastestLap = Infinity;
 
@@ -496,8 +522,11 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
         }
         if (l.lap_number && l.lap_number >= driverStats[dNum].maxLap) {
           driverStats[dNum].maxLap = l.lap_number;
-          if (l.date_start && l.lap_duration) {
+          // ✅ แก้บั๊กสำคัญ: ถ้ารอบใหม่ไม่มี lap_duration ต้องรีเซ็ตเป็น Infinity ห้ามเอาเวลารอบที่ 49 มาค้างเด็ดขาด!
+          if (l.date_start && l.lap_duration && l.lap_duration > 0) {
             driverStats[dNum].finishTime = new Date(l.date_start).getTime() + (l.lap_duration * 1000);
+          } else {
+            driverStats[dNum].finishTime = Infinity;
           }
         }
       });
@@ -510,9 +539,13 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
       }
     });
 
+    const hasOfficialData = Object.keys(officialMap).length > 0;
+    const hasPositionData = Object.keys(finalPositionsMap).length > 0;
+
     let results = Array.from(uniqueDriversMap.values()).map(d => {
       const dNum = d.driver_number;
       const stats = driverStats[dNum] || { maxLap: 0, bestLap: Infinity, finishTime: Infinity };
+      const off = officialMap[dNum] || null;
       const appDriver = resolveAppDriverName(d);
 
       const fallbackColor = d.team_colour ? `#${String(d.team_colour).replace("#", "")}` : "#888888";
@@ -532,6 +565,10 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
       const rawHeadshot = info.headshot || info.img || d.headshot_url || DEFAULT_DRIVER_IMG;
       const headshotUrl = (typeof getDriveDirectLink === "function") ? getDriveDirectLink(rawHeadshot) : rawHeadshot;
 
+      const officialPos = (off && off.position != null)
+        ? Number(off.position)
+        : (finalPositionsMap[dNum] || 999);
+
       return {
         driver_number: dNum,
         fullName: appDriver,
@@ -541,17 +578,83 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
         headshot: headshotUrl,
         seasonPoints: mapEntry.points,
         seasonPos: "P" + mapEntry.position,
-        maxLap: stats.maxLap,
+        officialPos: officialPos,
+        officialObj: off,
+        maxLap: (off && off.number_of_laps != null) ? Number(off.number_of_laps) : stats.maxLap,
         bestLap: stats.bestLap,
         finishTime: stats.finishTime,
         timeGap: "-"
       };
     });
 
-    results = results.filter(r => r.maxLap > 0 || r.bestLap !== Infinity);
+    if (!hasOfficialData) {
+      results = results.filter(r => r.maxLap > 0 || r.bestLap !== Infinity || r.officialPos < 999);
+    }
 
-    if (isRace) {
+    if (hasOfficialData) {
+      // 🎯 กรณีมี Official Classification จาก FIA (ตรงความจริง 100% ทุกกรณี!)
+      results.sort((a, b) => a.officialPos - b.officialPos);
+
+      const winnerLaps = results[0]?.maxLap || 0;
+      results.forEach((r, idx) => {
+        const off = r.officialObj;
+        r.pos = (off && off.position != null) ? off.position : (idx + 1);
+
+        if (off && off.dsq) {
+          r.timeGap = "DSQ";
+        } else if (off && off.dns) {
+          r.timeGap = "DNS";
+        } else if (off && off.dnf) {
+          r.timeGap = "DNF";
+        } else if (isRace) {
+          if (idx === 0) {
+            r.timeGap = winnerLaps > 0 ? `${winnerLaps} Laps` : "WINNER";
+          } else if (off && off.gap_to_leader != null && off.gap_to_leader !== "") {
+            const g = off.gap_to_leader;
+            if (typeof g === "number") {
+              r.timeGap = `+${g.toFixed(3)}s`;
+            } else {
+              const gStr = String(g).trim();
+              r.timeGap = gStr.startsWith("+") ? gStr : `+${gStr}`;
+            }
+          } else if (r.maxLap < winnerLaps) {
+            const diffLaps = winnerLaps - r.maxLap;
+            r.timeGap = `+${diffLaps} ${diffLaps === 1 ? "Lap" : "Laps"}`;
+          } else {
+            r.timeGap = "-";
+          }
+        } else {
+          // Practice / Qualifying
+          let bestDur = r.bestLap;
+          if (off && Array.isArray(off.duration)) {
+            const validDurs = off.duration.filter(v => typeof v === "number" && v > 0);
+            if (validDurs.length > 0) bestDur = validDurs[validDurs.length - 1];
+          } else if (off && typeof off.duration === "number" && off.duration > 0) {
+            bestDur = off.duration;
+          }
+
+          if (idx === 0 && bestDur !== Infinity) {
+            r.timeGap = formatLapTime(bestDur);
+          } else if (off && off.gap_to_leader != null) {
+            const g = Array.isArray(off.gap_to_leader)
+              ? off.gap_to_leader.filter(v => v != null).pop()
+              : off.gap_to_leader;
+            if (typeof g === "number") r.timeGap = `+${g.toFixed(3)}s`;
+            else if (g) r.timeGap = String(g).startsWith("+") ? String(g) : `+${g}`;
+            else r.timeGap = bestDur !== Infinity ? formatLapTime(bestDur) : "NO TIME";
+          } else if (bestDur !== Infinity && sessionFastestLap !== Infinity) {
+            r.timeGap = `+${(bestDur - sessionFastestLap).toFixed(3)}s`;
+          } else {
+            r.timeGap = "NO TIME";
+          }
+        }
+      });
+    } else if (isRace) {
+      // Fallback กรณีเซสชันกำลังแข่งสดและยังไม่ออกใบ Official Result
       results.sort((a, b) => {
+        if (hasPositionData && a.officialPos !== b.officialPos) {
+          return a.officialPos - b.officialPos;
+        }
         if (b.maxLap !== a.maxLap) return b.maxLap - a.maxLap;
         return a.finishTime - b.finishTime;
       });
@@ -567,11 +670,11 @@ async function loadResultsSessionData(sessionKey, btnEl, targetContainer = null,
           } else if (r.maxLap < winnerLaps) {
             const lapsBehind = winnerLaps - r.maxLap;
             r.timeGap = `+${lapsBehind} ${lapsBehind === 1 ? "Lap" : "Laps"}`;
-          } else if (r.finishTime !== Infinity && raceWinnerFinishTime !== Infinity) {
-            const diffSec = Math.max(0, (r.finishTime - raceWinnerFinishTime) / 1000);
+          } else if (r.finishTime !== Infinity && raceWinnerFinishTime !== Infinity && r.finishTime >= raceWinnerFinishTime) {
+            const diffSec = (r.finishTime - raceWinnerFinishTime) / 1000;
             r.timeGap = `+${diffSec.toFixed(3)}s`;
           } else {
-            r.timeGap = "DNF";
+            r.timeGap = "-";
           }
         });
       }
