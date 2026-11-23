@@ -4366,3 +4366,18 @@ body {
 .player-list-card:active {
   transform: scale(0.98) !important;
 }
+/* =========================================================
+   🔒 LOCK HORIZONTAL SCROLL IN DRIVER HERO MODAL (แก้ปัดซ้ายแล้วภาพล้นติดขอบ)
+   ========================================================= */
+#driverHeroModal .modal-content,
+#driverHeroModal .modal-body {
+  overflow-x: hidden !important;       /* ปิดการเลื่อนซ้าย-ขวาเด็ดขาด 100% */
+  max-width: 100vw !important;
+  overscroll-behavior-x: none !important;
+  touch-action: pan-y !important;      /* อนุญาตให้เบราว์เซอร์ไถได้แค่แนวตั้ง ส่วนปัดซ้าย-ขวาให้ JS ทำงานอย่างเดียว */
+}
+
+.hero-driver-photo-container {
+  overflow: hidden !important;         /* ตัดส่วนเกิน 125% ของรูปนักแข่งให้อยู่แต่ในกรอบจอ ไม่ดันหน้าเว็บกว้างขึ้น */
+  max-width: 100% !important;
+}
