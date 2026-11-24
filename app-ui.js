@@ -265,19 +265,23 @@ function confirmSelectDriver(driverName, skipAssignCurrent) {
 
   refreshDriverGridBadges();
 
-  if (nextSlot) {
+    if (nextSlot) {
     currentSelectingSlot = nextSlot;
     updateSelectorHeaderTitle(nextSlot);
+    const heroModalEl = document.getElementById('driverHeroModal');
+    const isHeroOpen = heroModalEl && heroModalEl.classList.contains('show');
     const driverModalEl = document.getElementById('driverSelectorModal');
-    if (driverSelectorModalInstance && driverModalEl && !driverModalEl.classList.contains('show')) {
+    if (!isHeroOpen && driverSelectorModalInstance && driverModalEl && !driverModalEl.classList.contains('show')) {
       driverSelectorModalInstance.show();
     }
   } else {
+    currentSelectingSlot = null;
     if (driverSelectorModalInstance) {
       driverSelectorModalInstance.hide();
     }
     setTimeout(updateRadioButtonVisibility, 250);
   }
+  return nextSlot;
 }
 
 function updateCardUI(slotId, driverName) {
@@ -2648,24 +2652,38 @@ function previewDriverBeforeSelect(fullName, isSwiping) {
 
   renderDriverRadar(fullName, info.color);
 
-  const btn = document.getElementById('btnConfirmHeroPick');
+    const btn = document.getElementById('btnConfirmHeroPick');
   const slotLabels = { 'pos1': 'P1', 'pos2': 'P2', 'pos3': 'P3', 'pos4': 'P4', 'posFL': 'FASTEST LAP' };
 
   if (btn && currentSelectingSlot) {
-    const lblSpan = document.getElementById('lblHeroSlot');
-    if (lblSpan) {
-      lblSpan.innerText = slotLabels[currentSelectingSlot] || '';
-    } else {
-      btn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i>SELECT FOR <span id="lblHeroSlot">' + (slotLabels[currentSelectingSlot] || '') + '</span>';
-    }
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-warning');
+    btn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i>SELECT FOR <span id="lblHeroSlot">' + (slotLabels[currentSelectingSlot] || '') + '</span>';
 
     btn.onclick = function() {
-      // เลือกนักแข่งคนปัจจุบันลงช่องที่เลือกทันที (รองรับทายซ้ำได้ทุกช่อง) แล้วพาไปช่องถัดไปใน 0ms!
-      confirmSelectDriver(currentHeroDriver, false);
+      const pickedSlotLabel = slotLabels[currentSelectingSlot] || '';
+      const remainingSlot = confirmSelectDriver(currentHeroDriver, false);
 
-      const heroModalEl = document.getElementById('driverHeroModal');
-      const heroInst = bootstrap.Modal.getInstance(heroModalEl) || window.driverHeroModalInstance;
-      if (heroInst) heroInst.hide();
+      if (remainingSlot) {
+        // ยังมีช่องถัดไปว่างอยู่ -> โชว์ Feedback สีเขียวสั้นๆ 0.35 วิ แล้วเปลี่ยนปุ่มเป็นช่องถัดไปทันทีโดยไม่ปิดหน้าการ์ด!
+        const nextLabel = slotLabels[remainingSlot] || '';
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="fa-solid fa-lock me-2"></i>LOCKED ' + pickedSlotLabel + '! → NEXT: ' + nextLabel;
+
+        setTimeout(function() {
+          if (!currentSelectingSlot) return;
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-warning');
+          btn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i>SELECT FOR <span id="lblHeroSlot">' + (slotLabels[currentSelectingSlot] || '') + '</span>';
+        }, 380);
+      } else {
+        // เลือกครบทุกช่องแล้ว (P1-P4 + FL) -> ปิดหน้าการ์ดพากลับไปกด Submit ทันที!
+        const heroModalEl = document.getElementById('driverHeroModal');
+        const heroInst = bootstrap.Modal.getInstance(heroModalEl) || window.driverHeroModalInstance;
+        if (heroInst) heroInst.hide();
+        showToast('เลือกนักแข่งครบทุกอันดับแล้ว!', 'success');
+      }
     };
   }
 
