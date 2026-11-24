@@ -4381,3 +4381,38 @@ body {
   overflow: hidden !important;         /* ตัดส่วนเกิน 125% ของรูปนักแข่งให้อยู่แต่ในกรอบจอ ไม่ดันหน้าเว็บกว้างขึ้น */
   max-width: 100% !important;
 }
+/* =========================================================
+   🌟 FULL-BLEED TOP SAFE-AREA FIX FOR DRIVER HERO MODAL
+   (แก้ขอบจอด้านบนมืดตอนเปิดซ้อนจากหน้าทายผล ให้ทะลุสุดขอบจอ 100%)
+   ========================================================= */
+#driverHeroModal {
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  height: 100dvh !important;
+}
+
+#driverHeroModal .modal-dialog.modal-fullscreen {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#driverHeroModal #heroBgColor {
+  position: fixed !important; /* บังคับยึดติดพิกัด (0,0) ทะลุ Status Bar / Dynamic Island ทุกกรณีแม้ซ้อน Modal 2 ชั้น! */
+  inset: 0 !important;
+  top: calc(-1 * env(safe-area-inset-top, 0px)) !important;
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  min-height: calc(100dvh + env(safe-area-inset-top, 0px)) !important;
+  border-radius: 0 !important;
+}
+
+/* ดันโลโก้ F1 และปุ่มกากบาท X ลงมาพ้นรอยบาก Dynamic Island อย่างสวยงามพอดีเป๊ะ */
+#driverHeroModal .modal-header {
+  padding-top: calc(16px + env(safe-area-inset-top, 12px)) !important;
+}
