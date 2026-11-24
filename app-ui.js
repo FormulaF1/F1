@@ -2179,6 +2179,8 @@ function initHeroHybridShowcaseUI() {
 }
 
 function navigateHeroDriver(direction) {
+  const mBody = document.querySelector('#driverHeroModal .modal-body');
+  if (mBody) mBody.scrollLeft = 0; // รีเซ็ตแกนแนวนอนให้อยู่ตรงกลางเสมอ
   if (!Array.isArray(DRIVERS) || DRIVERS.length === 0) return;
   if (!currentHeroDriver) currentHeroDriver = DRIVERS[0];
   triggerHaptic();
